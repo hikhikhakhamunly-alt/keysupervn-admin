@@ -98,6 +98,8 @@ th{color:var(--mute);font-weight:600;font-size:12px;text-transform:uppercase;let
       <p class="hint">Mỗi dòng là một key. Sau khi nhập, tồn kho sẽ tự cập nhật.</p>
       <label>Sản phẩm</label>
       <select id="k-sel"></select>
+      <label>Gói của key (phải khớp với gói sản phẩm)</label>
+      <select id="k-pkg"></select>
       <label>Danh sách key</label>
       <textarea id="k-list" placeholder="KEY-AAAA-1111&#10;KEY-BBBB-2222"></textarea>
       <div class="row"><button class="btn" id="k-save">Thêm vào kho</button><span class="msg" id="k-msg"></span></div>
@@ -158,14 +160,17 @@ async function getProducts(){
 function renderProducts(){
   $("ptable").innerHTML = products.map(p=>{
     const st=Number(p.stock||0);
-    return `<tr><td>${esc(p.name)}</td><td>${esc(p.cat)}</td><td><span class="stock ${st>0?"in":"out"}">${st}</span></td></tr>`;
+    return `<tr><td>${esc(p.name)}</td><td>${esc(p.cat)}</td><td><span class="stock ${st>0?"in":"out"}">${st}</span> <span class="hint">${Object.entries(p.pkg_stock||{}).map(([k,v])=>k+": "+v).join(" · ")}</span></td></tr>`;
   }).join("") || `<tr><td colspan="3" class="msg">Chưa có sản phẩm.</td></tr>`;
 }
 function renderSelects(){
   const opts = products.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("");
   $("p-sel").innerHTML = `<option value="">+ Sản phẩm mới</option>`+opts;
   $("k-sel").innerHTML = opts;
+  renderKPkg();
 }
+function renderKPkg(){ const p=products.find(x=>x.id===$("k-sel").value); $("k-pkg").innerHTML=(p?p.pk||[]:[]).map(x=>`<option value="${esc(x.l)}">${esc(x.l)}</option>`).join(""); }
+$("k-sel").onchange=renderKPkg;
 $("p-sel").onchange = () => {
   const p = products.find(x=>x.id===$("p-sel").value) || {name:"",cat:"",desc:"",style:"generic",img:"",pk:[]};
   $("p-name").value=p.name; $("p-cat").value=p.cat; $("p-desc").value=p.desc||""; $("p-style").value=p.style||"generic";
@@ -191,7 +196,7 @@ $("k-save").onclick = async () => {
   const product = $("k-sel").value;
   const values = $("k-list").value.split("\n").map(s=>s.trim()).filter(Boolean);
   if(!product||!values.length) return $("k-msg").textContent="Chọn sản phẩm và nhập key.";
-  const {error} = await sb.from("license_keys").insert(values.map(v=>({product, value:v})));
+  const {error} = await sb.from("license_keys").insert(values.map(v=>({product, value:v, pkg:$("k-pkg").value})));
   if(error) return $("k-msg").textContent="Lỗi: "+error.message;
   $("k-msg").textContent=`Đã thêm ${values.length} key.`; $("k-list").value="";
   await loadAll();
