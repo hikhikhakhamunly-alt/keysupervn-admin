@@ -89,7 +89,7 @@ th{color:var(--mute);font-weight:600;font-size:12px;text-transform:uppercase;let
       <input id="p-img" placeholder="https://...">
       <label>Gói giá (mỗi dòng: tên|giá)</label>
       <textarea id="p-pk" placeholder="1 Ngày|15000&#10;1 Tuần|70000&#10;1 Tháng|150000"></textarea>
-      <div class="row"><button class="btn" id="p-save">Lưu sản phẩm</button></div>
+      <div class="row"><button class="btn" id="p-save">Lưu sản phẩm</button><button class="btn ghost" id="p-del">Xóa sản phẩm</button></div>
     </div>
   </div>
 
@@ -202,6 +202,17 @@ $("p-save").onclick = async () => {
   });
   if(error) return toast("Lỗi: "+error.message);
   toast("Đã lưu sản phẩm"); await loadAll();
+};
+
+/* ===== Xóa sản phẩm ===== */
+$("p-del").onclick = async () => {
+  const id = $("p-sel").value;
+  if(!id) return toast("Chọn sản phẩm cần xóa trong danh sách");
+  const name = $("p-name").value;
+  if(!confirm("Xóa sản phẩm \""+name+"\"? Các key trong kho của sản phẩm này cũng sẽ bị xóa.")) return;
+  const {error} = await sb.from("products").delete().eq("id", id);
+  if(error) return toast("Không xóa được: "+error.message);
+  toast("Đã xóa sản phẩm"); $("p-sel").value=""; await loadAll();
 };
 
 /* ===== Kho key ===== */
