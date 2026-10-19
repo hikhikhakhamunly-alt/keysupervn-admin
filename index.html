@@ -6,6 +6,7 @@
 <meta name="robots" content="noindex">
 <title>Key Super VN · Quản trị</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js"></script>
 <style>
 :root{--bg:#050914;--card:#0b1430;--line:#1c2b50;--txt:#eaf1ff;--mute:#8ea0c4;--acc:#3ea6ff;--ok:#2ee59d;--bad:#ff5c7a}
 *{box-sizing:border-box}
@@ -39,6 +40,9 @@ th{color:var(--mute);font-weight:600;font-size:12px;text-transform:uppercase;let
 .login{max-width:380px;margin:12vh auto 0;text-align:center}
 .login h1{font-size:28px;margin:0 0 6px}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#13224a;border:1px solid var(--line);padding:10px 16px;border-radius:12px;display:none;font-size:14px}
+.preview-video{display:block;width:100%;max-width:640px;max-height:360px;background:#000;margin-top:12px;border-radius:12px}
+.guide-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.guide-item{border:1px solid var(--line);border-radius:12px;padding:14px;background:#0a1226}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -64,6 +68,7 @@ th{color:var(--mute);font-weight:600;font-size:12px;text-transform:uppercase;let
     <button data-t="prod" class="on">Sản phẩm</button>
     <button data-t="keys">Kho key</button>
     <button data-t="orders">Đơn chờ</button>
+    <button data-t="guides">Hướng dẫn</button>
   </div>
 </header>
 <main>
@@ -117,6 +122,28 @@ th{color:var(--mute);font-weight:600;font-size:12px;text-transform:uppercase;let
       <div class="row"><button class="btn ghost sm" id="o-reload">Tải lại</button></div>
     </div>
   </div>
+
+  <!-- QUẢN LÝ VIDEO HƯỚNG DẪN -->
+  <div id="t-guides" hidden>
+    <div class="panel">
+      <h2>Danh sách hướng dẫn</h2>
+      <p class="hint">Chọn một hướng dẫn để sửa; khách chỉ thấy hướng dẫn được xuất bản.</p>
+      <div id="guide-list" class="guide-list"><p class="msg">Đang tải...</p></div>
+    </div>
+    <div class="panel">
+      <h2 id="g-form-title">Thêm video hướng dẫn</h2>
+      <p class="hint">Tải video trực tiếp lên Supabase Storage. Giới hạn 100 MB/video. Định dạng hỗ trợ: MP4, WebM, MOV.</p>
+      <label>Hướng dẫn</label>
+      <select id="g-sel"><option value="">+ Hướng dẫn mới</option></select>
+      <label>Tên hướng dẫn</label><input id="g-title" maxlength="140" placeholder="Ví dụ: Cách cài đặt NovaX Proxy">
+      <label>Mô tả</label><textarea id="g-desc" maxlength="5000" placeholder="Mô tả các bước thực hiện..."></textarea>
+      <label>Video (tối đa 100 MB)</label><input type="file" id="g-file" accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov">
+      <p class="hint" id="g-filemsg">Chọn file video từ điện thoại hoặc máy tính. Khi sửa, bỏ trống nếu muốn giữ video hiện tại.</p>
+      <video id="g-preview" class="preview-video" controls playsinline hidden></video>
+      <label><input id="g-published" type="checkbox" checked style="width:auto;margin-right:8px">Xuất bản để khách xem</label>
+      <div class="row"><button class="btn" id="g-save">Lưu hướng dẫn</button><button class="btn ghost" id="g-new">Làm mới</button><button class="btn ghost" id="g-del">Xóa hướng dẫn</button><span class="msg" id="g-msg"></span></div>
+    </div>
+  </div>
 </main>
 </section>
 
@@ -129,6 +156,11 @@ const SB_KEY = "sb_publishable_ZBNx15WHWgcQqQB2qvwjpA_nRjrep5W";  // anon public
 const sb = (window.supabase && !SB_URL.startsWith("PASTE")) ? window.supabase.createClient(SB_URL, SB_KEY) : null;
 
 let products = [];
+let guideVideos = [];
+let selectedGuide = null;
+let guidePreviewUrl = "";
+const GUIDE_BUCKET = "guide-videos";
+const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
 const $ = id => document.getElementById(id);
 const fmt = n => Number(n).toLocaleString("vi-VN")+"đ";
 const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -154,7 +186,7 @@ function showApp(){ $("login").hidden=true; $("app").hidden=false; loadAll(); }
 $("logout") && ($("logout").onclick = ()=>sb.auth.signOut().then(()=>location.reload()));
 
 /* ===== Tải dữ liệu ===== */
-async function loadAll(){ await getProducts(); renderProducts(); renderSelects(); loadOrders(); }
+async function loadAll(){ await getProducts(); renderProducts(); renderSelects(); loadOrders(); loadGuideVideos(); }
 async function getProducts(){
   const {data,error} = await sb.rpc("get_products");
   products = error ? [] : (data||[]).map(p=>({...p,desc:p.descr}));
@@ -248,10 +280,102 @@ async function confirmOrder(code){
   toast("Đã gán key cho đơn "+code); await loadAll();
 }
 
+/* ===== Quản lý video hướng dẫn ===== */
+async function currentAdmin(){
+  const {data:{user},error}=await sb.auth.getUser();
+  if(error||!user) return null;
+  const {data,error:adminError}=await sb.from("admin_users").select("user_id").eq("user_id",user.id).maybeSingle();
+  return !adminError&&data ? user : null;
+}
+async function loadGuideVideos(){
+  const {data,error}=await sb.from("guide_videos").select("*").order("created_at",{ascending:false});
+  if(error){$("guide-list").innerHTML='<p class="msg">Không tải được danh sách. Kiểm tra SQL/RLS và quyền admin_users.</p>';return;}
+  guideVideos=data||[];
+  $("guide-list").innerHTML=guideVideos.map(g=>`<div class="guide-item"><strong>${esc(g.title)}</strong><p class="hint">${esc(g.description||"")}</p><p class="msg">${g.is_published?"Đang xuất bản":"Đang ẩn"}</p><button class="btn sm" data-guide-edit="${esc(g.id)}">Sửa</button></div>`).join("")||'<p class="msg">Chưa có hướng dẫn nào.</p>';
+  $("g-sel").innerHTML='<option value="">+ Hướng dẫn mới</option>'+guideVideos.map(g=>`<option value="${esc(g.id)}">${esc(g.title)}</option>`).join("");
+  document.querySelectorAll("[data-guide-edit]").forEach(b=>b.onclick=()=>selectGuide(b.dataset.guideEdit));
+}
+function clearGuideForm(){
+  selectedGuide=null; $("g-sel").value=""; $("g-title").value=""; $("g-desc").value=""; $("g-file").value=""; $("g-published").checked=true;
+  $("g-form-title").textContent="Thêm video hướng dẫn"; $("g-filemsg").textContent="Chọn file video từ điện thoại hoặc máy tính."; $("g-msg").textContent="";
+  if(guidePreviewUrl) URL.revokeObjectURL(guidePreviewUrl); guidePreviewUrl=""; $("g-preview").removeAttribute("src"); $("g-preview").hidden=true;
+}
+function selectGuide(id){
+  const g=guideVideos.find(x=>x.id===id); if(!g)return;
+  selectedGuide=g; $("g-sel").value=g.id; $("g-title").value=g.title||""; $("g-desc").value=g.description||""; $("g-published").checked=!!g.is_published;
+  $("g-file").value=""; $("g-form-title").textContent="Cập nhật video hướng dẫn"; $("g-filemsg").textContent="Đang dùng video hiện tại. Chọn file mới nếu muốn thay.";
+  if(guidePreviewUrl) URL.revokeObjectURL(guidePreviewUrl); guidePreviewUrl="";
+  $("g-preview").src=g.video_url; $("g-preview").hidden=false; $("g-msg").textContent="";
+  $("t-guides").scrollIntoView({behavior:"smooth",block:"start"});
+}
+$("g-sel").onchange=()=>{if($("g-sel").value)selectGuide($("g-sel").value);else clearGuideForm();};
+$("g-new").onclick=clearGuideForm;
+$("g-file").onchange=()=>{
+  const file=$("g-file").files[0];
+  if(guidePreviewUrl) URL.revokeObjectURL(guidePreviewUrl); guidePreviewUrl="";
+  if(!file){if(selectedGuide){$("g-preview").src=selectedGuide.video_url;$("g-preview").hidden=false;}else{$("g-preview").hidden=true;}return;}
+  if(file.size>MAX_VIDEO_BYTES){$("g-file").value="";$("g-filemsg").textContent="File vượt quá 100 MB. Hãy chọn video nhỏ hơn.";return;}
+  if(!["video/mp4","video/webm","video/quicktime"].includes(file.type)){ $("g-file").value="";$("g-filemsg").textContent="Định dạng không hỗ trợ. Dùng MP4, WebM hoặc MOV.";return; }
+  guidePreviewUrl=URL.createObjectURL(file); $("g-preview").src=guidePreviewUrl; $("g-preview").hidden=false; $("g-filemsg").textContent=`${file.name} · ${(file.size/1024/1024).toFixed(1)} MB`;
+};
+$("g-save").onclick=async()=>{
+  const admin=await currentAdmin(); if(!admin){toast("Tài khoản chưa được cấp quyền quản trị video.");return;}
+  const title=$("g-title").value.trim(), description=$("g-desc").value.trim(), file=$("g-file").files[0];
+  if(!title){toast("Nhập tên hướng dẫn.");return;}
+  if(!selectedGuide&&!file){toast("Chọn file video cho hướng dẫn mới.");return;}
+  if(file&&file.size>MAX_VIDEO_BYTES){toast("Video vượt quá 100 MB.");return;}
+  let videoUrl=selectedGuide?.video_url||"", videoPath=selectedGuide?.video_path||"";
+  const oldPath=videoPath;
+  if(file){
+    const ext=(file.name.split(".").pop()||"mp4").toLowerCase();
+    const path=`${admin.id}/${crypto.randomUUID()}.${ext}`;
+    $("g-msg").textContent="Đang tải video lên: 0%";
+    const {data:sessionData}=await sb.auth.getSession();
+    const accessToken=sessionData?.session?.access_token;
+    if(!accessToken){$("g-msg").textContent="Phiên đăng nhập hết hạn. Đăng nhập lại rồi thử tiếp.";return;}
+    try {
+      await new Promise((resolve,reject)=>{
+        if(!window.tus||!window.tus.Upload){reject(new Error("Không tải được thư viện upload video."));return;}
+        const upload=new tus.Upload(file,{
+          endpoint:`${SB_URL.replace(".supabase.co", ".storage.supabase.co")}/storage/v1/upload/resumable`,
+          retryDelays:[0,1000,3000,5000,10000],
+          headers:{authorization:`Bearer ${accessToken}`,apikey:SB_KEY,"x-upsert":"false"},
+          uploadDataDuringCreation:true,
+          removeFingerprintOnSuccess:true,
+          metadata:{bucketName:GUIDE_BUCKET,objectName:path,contentType:file.type||"video/mp4",cacheControl:"3600"},
+          onError:error=>reject(error),
+          onProgress:(bytesUploaded,bytesTotal)=>{$("g-msg").textContent=`Đang tải video lên: ${Math.round(bytesUploaded/bytesTotal*100)}%`;},
+          onSuccess:()=>resolve()
+        });
+        upload.start();
+      });
+    } catch(uploadError){$("g-msg").textContent="Lỗi tải video: "+(uploadError.message||uploadError);return;}
+    videoPath=path; videoUrl=sb.storage.from(GUIDE_BUCKET).getPublicUrl(path).data.publicUrl;
+  }
+  const row={title,description,video_url:videoUrl,video_path:videoPath,is_published:$("g-published").checked,updated_at:new Date().toISOString()};
+  let result;
+  if(selectedGuide) result=await sb.from("guide_videos").update(row).eq("id",selectedGuide.id).select().single();
+  else result=await sb.from("guide_videos").insert(row).select().single();
+  if(result.error){$("g-msg").textContent="Lỗi lưu: "+result.error.message;return;}
+  if(file&&oldPath&&oldPath!==videoPath){const {error:delErr}=await sb.storage.from(GUIDE_BUCKET).remove([oldPath]);if(delErr)toast("Đã cập nhật hướng dẫn, nhưng không xóa được video cũ.");}
+  toast("Đã lưu hướng dẫn."); clearGuideForm(); await loadGuideVideos();
+};
+$("g-del").onclick=async()=>{
+  if(!selectedGuide)return toast("Chọn hướng dẫn cần xóa.");
+  const admin=await currentAdmin(); if(!admin)return toast("Tài khoản chưa được cấp quyền quản trị video.");
+  if(!confirm(`Xóa hướng dẫn “${selectedGuide.title}”?`))return;
+  const g=selectedGuide;
+  const {error}=await sb.from("guide_videos").delete().eq("id",g.id);
+  if(error)return toast("Không xóa được: "+error.message);
+  if(g.video_path){const {error:storageError}=await sb.storage.from(GUIDE_BUCKET).remove([g.video_path]);if(storageError)toast("Đã xóa mục nhưng file video cũ cần xóa thủ công trong Storage.");}
+  clearGuideForm(); await loadGuideVideos(); toast("Đã xóa hướng dẫn.");
+};
+
 /* ===== Chuyển tab ===== */
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
   document.querySelectorAll(".tabs button").forEach(x=>x.classList.toggle("on",x===b));
-  ["prod","keys","orders"].forEach(t=>$("t-"+t).hidden = t!==b.dataset.t);
+  ["prod","keys","orders","guides"].forEach(t=>$("t-"+t).hidden = t!==b.dataset.t);
+  if(b.dataset.t==="guides") loadGuideVideos();
 });
 </script>
 </body>
