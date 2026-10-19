@@ -72,7 +72,6 @@ th{color:var(--mute);font-weight:600;font-size:12px;text-transform:uppercase;let
   </div>
 </header>
 <main>
-  <!-- SẢN PHẨM -->
   <div id="t-prod">
     <div class="panel">
       <h2>Danh sách sản phẩm</h2>
@@ -98,7 +97,6 @@ th{color:var(--mute);font-weight:600;font-size:12px;text-transform:uppercase;let
     </div>
   </div>
 
-  <!-- KHO KEY -->
   <div id="t-keys" hidden>
     <div class="panel">
       <h2>Nhập key vào kho</h2>
@@ -113,7 +111,6 @@ th{color:var(--mute);font-weight:600;font-size:12px;text-transform:uppercase;let
     </div>
   </div>
 
-  <!-- ĐƠN CHỜ -->
   <div id="t-orders" hidden>
     <div class="panel">
       <h2>Đơn chờ thanh toán</h2>
@@ -123,7 +120,6 @@ th{color:var(--mute);font-weight:600;font-size:12px;text-transform:uppercase;let
     </div>
   </div>
 
-  <!-- QUẢN LÝ VIDEO HƯỚNG DẪN -->
   <div id="t-guides" hidden>
     <div class="panel">
       <h2>Danh sách hướng dẫn</h2>
@@ -146,13 +142,10 @@ th{color:var(--mute);font-weight:600;font-size:12px;text-transform:uppercase;let
   </div>
 </main>
 </section>
-
-<div class="toast" id="toast"></div>
-
-<script>
+<div class="toast" id="toast"></div><script>
 /* ===== CẤU HÌNH ===== */
-const SB_URL = "https://raztcloppwdzqyshlepp.supabase.co";       // cùng project với index.html
-const SB_KEY = "sb_publishable_ZBNx15WHWgcQqQB2qvwjpA_nRjrep5W";  // anon public key
+const SB_URL = "https://raztcloppwdzqyshlepp.supabase.co";
+const SB_KEY = "sb_publishable_ZBNx15WHWgcQqQB2qvwjpA_nRjrep5W";
 const sb = (window.supabase && !SB_URL.startsWith("PASTE")) ? window.supabase.createClient(SB_URL, SB_KEY) : null;
 
 let products = [];
@@ -278,18 +271,14 @@ async function confirmOrder(code){
     return;
   }
   toast("Đã gán key cho đơn "+code); await loadAll();
-}
-
-/* ===== Quản lý video hướng dẫn ===== */
+}/* ===== Quản lý video hướng dẫn ===== */
 async function currentAdmin(){
   const {data:{user},error}=await sb.auth.getUser();
-  if(error||!user) return null;
-  const {data,error:adminError}=await sb.from("admin_users").select("user_id").eq("user_id",user.id).maybeSingle();
-  return !adminError&&data ? user : null;
+  return (!error && user) ? user : null;
 }
 async function loadGuideVideos(){
   const {data,error}=await sb.from("guide_videos").select("*").order("created_at",{ascending:false});
-  if(error){$("guide-list").innerHTML='<p class="msg">Không tải được danh sách. Kiểm tra SQL/RLS và quyền admin_users.</p>';return;}
+  if(error){$("guide-list").innerHTML='<p class="msg">Không tải được danh sách. Kiểm tra SQL/RLS và đăng nhập admin.</p>';return;}
   guideVideos=data||[];
   $("guide-list").innerHTML=guideVideos.map(g=>`<div class="guide-item"><strong>${esc(g.title)}</strong><p class="hint">${esc(g.description||"")}</p><p class="msg">${g.is_published?"Đang xuất bản":"Đang ẩn"}</p><button class="btn sm" data-guide-edit="${esc(g.id)}">Sửa</button></div>`).join("")||'<p class="msg">Chưa có hướng dẫn nào.</p>';
   $("g-sel").innerHTML='<option value="">+ Hướng dẫn mới</option>'+guideVideos.map(g=>`<option value="${esc(g.id)}">${esc(g.title)}</option>`).join("");
@@ -337,7 +326,7 @@ $("g-save").onclick=async()=>{
       await new Promise((resolve,reject)=>{
         if(!window.tus||!window.tus.Upload){reject(new Error("Không tải được thư viện upload video."));return;}
         const upload=new tus.Upload(file,{
-          endpoint:`${SB_URL.replace(".supabase.co", ".storage.supabase.co")}/storage/v1/upload/resumable`,
+          endpoint:`${SB_URL}/storage/v1/upload/resumable`,
           retryDelays:[0,1000,3000,5000,10000],
           headers:{authorization:`Bearer ${accessToken}`,apikey:SB_KEY,"x-upsert":"false"},
           uploadDataDuringCreation:true,
