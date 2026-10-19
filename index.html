@@ -83,8 +83,10 @@ th{color:var(--mute);font-weight:600;font-size:12px;text-transform:uppercase;let
       <label>Mô tả</label><input id="p-desc">
       <label>Kiểu nền khi chưa có ảnh</label>
       <select id="p-style"><option value="novax">Xanh NovaX</option><option value="innova">Xanh lá Innova</option><option value="generic">Tím</option></select>
-      <label>Link ảnh banner (Google Drive, để chế độ "Bất kỳ ai có liên kết")</label>
-      <input id="p-img" placeholder="https://drive.google.com/file/d/.../view">
+      <label>Ảnh banner</label>
+      <input type="file" id="p-file" accept="image/*">
+      <div class="hint" id="p-imgmsg">Chọn ảnh từ máy để tải lên. Hoặc dán link ảnh vào ô bên dưới (tuỳ chọn).</div>
+      <input id="p-img" placeholder="https://...">
       <label>Gói giá (mỗi dòng: tên|giá)</label>
       <textarea id="p-pk" placeholder="1 Ngày|15000&#10;1 Tuần|70000&#10;1 Tháng|150000"></textarea>
       <div class="row"><button class="btn" id="p-save">Lưu sản phẩm</button></div>
@@ -175,6 +177,17 @@ $("p-sel").onchange = () => {
   const p = products.find(x=>x.id===$("p-sel").value) || {name:"",cat:"",desc:"",style:"generic",img:"",pk:[]};
   $("p-name").value=p.name; $("p-cat").value=p.cat; $("p-desc").value=p.desc||""; $("p-style").value=p.style||"generic";
   $("p-img").value=p.img||""; $("p-pk").value=(p.pk||[]).map(x=>x.l+"|"+x.p).join("\n");
+};
+
+/* ===== Tải ảnh lên Supabase Storage ===== */
+$("p-file").onchange = async e => {
+  const file = e.target.files[0]; if(!file) return;
+  $("p-imgmsg").textContent = "Đang tải ảnh lên...";
+  const path = Date.now()+"-"+file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+  const {error} = await sb.storage.from("product-images").upload(path, file);
+  if(error){ $("p-imgmsg").textContent = "Lỗi tải ảnh: "+error.message; return; }
+  $("p-img").value = sb.storage.from("product-images").getPublicUrl(path).data.publicUrl;
+  $("p-imgmsg").textContent = "Đã tải ảnh. Bấm Lưu sản phẩm để áp dụng.";
 };
 
 /* ===== Sản phẩm ===== */
