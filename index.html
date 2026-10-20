@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -5,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Key Super VN · Quản trị</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.1/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js"></script>
 <style>
 :root{--bg:#050914;--card:#0b1430;--line:#1c2b50;--txt:#eaf1ff;--mute:#8ea0c4;--acc:#3ea6ff;--ok:#2ee59d;--bad:#ff5c7a}
@@ -119,6 +120,15 @@ th{color:var(--mute);font-weight:600;font-size:12px;text-transform:uppercase;let
     <div class="panel">
       <h2>Đơn chờ thanh toán</h2>
       <p class="hint">Kiểm tra tài khoản đã nhận đúng số tiền và đúng mã đơn trong nội dung chuyển khoản, rồi bấm "Xác nhận" để gán key cho khách.</p>
+
+      <!-- TÌM KIẾM MÃ ĐƠN: PHẦN ĐƯỢC THÊM -->
+      <div class="row" style="margin:14px 0">
+        <input id="o-search" type="search" placeholder="Nhập mã đơn cần tìm..." aria-label="Tìm theo mã đơn" style="flex:1;min-width:220px">
+        <button class="btn" id="o-search-btn" type="button">Tìm kiếm</button>
+        <button class="btn ghost sm" id="o-search-clear" type="button">Xóa tìm</button>
+      </div>
+      <p class="msg" id="o-search-msg" aria-live="polite"></p>
+
       <table><thead><tr><th>Mã đơn</th><th>Sản phẩm</th><th>Gói</th><th>Số tiền</th><th></th></tr></thead><tbody id="otable"></tbody></table>
       <div class="row"><button class="btn ghost sm" id="o-reload">Tải lại</button></div>
     </div>
@@ -298,16 +308,49 @@ $("k-save").onclick = async () => {
 };
 
 /* ===== Đơn chờ ===== */
+let pendingOrders = [];
+
 $("o-reload").onclick = loadOrders;
-async function loadOrders(){
-  const {data,error} = await sb.from("orders").select("*").eq("status","pending").order("created",{ascending:false});
-  if(error){ $("otable").innerHTML=`<tr><td colspan="5" class="msg">Không tải được đơn.</td></tr>`; return; }
-  $("otable").innerHTML = (data||[]).map(o=>`<tr>
+$("o-search-btn").onclick = renderOrders;
+$("o-search-clear").onclick = () => {
+  $("o-search").value = "";
+  renderOrders();
+  $("o-search").focus();
+};
+$("o-search").addEventListener("keydown", e => {
+  if(e.key === "Enter") renderOrders();
+});
+
+function renderOrders(){
+  const q = $("o-search").value.trim().toLowerCase();
+  const filtered = pendingOrders.filter(o =>
+    String(o.code ?? "").toLowerCase().includes(q)
+  );
+
+  $("otable").innerHTML = filtered.map(o=>`<tr>
       <td class="code">${esc(o.code)}</td><td>${esc(o.pname||o.product)}</td><td>${esc(o.pkg)}</td><td>${fmt(o.amount)}</td>
       <td><button class="btn sm" data-c="${esc(o.code)}">Xác nhận</button></td></tr>`).join("")
-    || `<tr><td colspan="5" class="msg">Không có đơn chờ.</td></tr>`;
-  document.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>confirmOrder(b.dataset.c));
+    || `<tr><td colspan="5" class="msg">${q ? "Không tìm thấy mã đơn phù hợp trong danh sách đơn chờ." : "Không có đơn chờ."}</td></tr>`;
+
+  $("o-search-msg").textContent = q
+    ? `Tìm thấy ${filtered.length} / ${pendingOrders.length} đơn chờ.`
+    : `Đang hiển thị ${pendingOrders.length} đơn chờ.`;
+
+  document.querySelectorAll("#otable [data-c]").forEach(b=>{
+    b.onclick=()=>confirmOrder(b.dataset.c);
+  });
 }
+
+async function loadOrders(){
+  const {data,error} = await sb.from("orders").select("*").eq("status","pending").order("created",{ascending:false});
+  if(error){
+    $("otable").innerHTML=`<tr><td colspan="5" class="msg">Không tải được đơn.</td></tr>`;
+    return;
+  }
+  pendingOrders = data || [];
+  renderOrders();
+}
+
 async function confirmOrder(code){
   const {data:o} = await sb.from("orders").select("amount").eq("code",code).single();
   const need = o ? Number(o.amount) : 0;
@@ -435,7 +478,7 @@ function selectDownload(id){
   selectedDownload=d; $("d-sel").value=d.id; $("d-title").value=d.title||""; $("d-desc").value=d.description||""; $("d-url").value=d.download_url||""; $("d-image").value=d.image_url||""; $("d-published").checked=!!d.is_published; $("d-form-title").textContent="Cập nhật phần mềm"; $("d-msg").textContent="";
   $("t-downloads").scrollIntoView({behavior:"smooth",block:"start"});
 }
-$("d-sel").onchange=()=>$("d-sel").value?selectDownload($("d-sel").value):clearDownloadForm();
+$("d-sel").onchange=()=> $("d-sel").value?selectDownload($("d-sel").value):clearDownloadForm();
 $("d-new").onclick=clearDownloadForm;
 $("d-save").onclick=async()=>{
   const admin=await currentAdmin(); if(!admin)return toast("Tài khoản chưa được cấp quyền admin.");
