@@ -309,11 +309,17 @@ async function loadOrders(){
   document.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>confirmOrder(b.dataset.c));
 }
 async function confirmOrder(code){
-  if(!confirm("Xác nhận đã nhận đủ tiền cho đơn "+code+"?")) return;
-  const {error} = await sb.rpc("confirm_order",{p_code:code});
+  const {data:o} = await sb.from("orders").select("amount").eq("code",code).single();
+  const need = o ? Number(o.amount) : 0;
+  const input = prompt(`Đơn ${code}: cần ${fmt(need)}.\nNhập số tiền THỰC TẾ đã nhận trong app BIDV:`);
+  if(input===null) return;
+  const received = Number(String(input).replace(/[^0-9]/g,""));
+  if(!received || received < need) return toast(`Số tiền ${fmt(received||0)} chưa đủ ${fmt(need)}. Không giao key.`);
+  if(!confirm(`Xác nhận đã nhận ${fmt(received)} cho đơn ${code}?`)) return;
+  const {error} = await sb.rpc("confirm_order",{p_code:code,p_received:received});
   if(error){
     const m=error.message||"";
-    toast(m.includes("nokey")?"Hết key cho sản phẩm này":"Lỗi: "+m);
+    toast(m.includes("nokey")?"Hết key cho gói này":m.includes("underpaid")?"Chưa đủ tiền":"Lỗi: "+m);
     return;
   }
   toast("Đã gán key cho đơn "+code); await loadAll();
