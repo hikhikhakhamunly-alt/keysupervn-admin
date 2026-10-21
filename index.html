@@ -1,3 +1,173 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Key Super VN · Quản trị</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js"></script>
+<style>
+:root{--bg:#050914;--card:#0b1430;--line:#1c2b50;--txt:#eaf1ff;--mute:#8ea0c4;--acc:#3ea6ff;--ok:#2ee59d;--bad:#ff5c7a}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;color:var(--txt);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:radial-gradient(900px 500px at 10% -10%,#1d4ed833,transparent 60%),radial-gradient(800px 500px at 100% 10%,#7c3aed33,transparent 60%),var(--bg);background-attachment:fixed}
+.rainbow{background:linear-gradient(90deg,#3ea6ff,#a855f7,#22d3ee,#f472b6,#3ea6ff);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shift 6s linear infinite}
+@keyframes shift{to{background-position:300% 0}}
+header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding:16px 22px;border-bottom:1px solid var(--line);background:rgba(5,9,20,.75);backdrop-filter:blur(10px);position:sticky;top:0;z-index:5}
+.logo{font-weight:900;font-size:20px;letter-spacing:1px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{background:none;border:0;color:var(--mute);padding:9px 14px;border-radius:10px;cursor:pointer;font-size:14px}
+.tabs button.on,.tabs button:hover{color:#fff;background:#13224a}
+main{max-width:1000px;margin:0 auto;padding:24px 18px 60px}
+.panel{background:linear-gradient(180deg,#0f1b36,#0a1226);border:1px solid var(--line);border-radius:18px;padding:22px;margin-bottom:18px}
+.panel h2{margin:0 0 6px;font-size:19px}
+.hint{color:var(--mute);font-size:13px;margin:4px 0 12px;line-height:1.5}
+label{display:block;font-size:13px;color:var(--mute);margin:12px 0 6px}
+input,select,textarea{width:100%;background:#0a1226;color:var(--txt);border:1px solid var(--line);border-radius:12px;padding:11px 13px;font:inherit;font-size:14px}
+textarea{min-height:90px;resize:vertical}
+.btn{background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;border:0;padding:11px 18px;border-radius:12px;font-weight:700;cursor:pointer;font-size:14px}
+.btn.ghost{background:#101c36;border:1px solid var(--line)}
+.btn.sm{padding:7px 12px;font-size:13px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:11px 8px;border-bottom:1px solid var(--line)}
+th{color:var(--mute);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+.stock{padding:3px 9px;border-radius:6px;font-size:12px}
+.in{color:var(--ok);background:#0f2e26}.out{color:var(--bad);background:#2e1019}
+.code{font-family:ui-monospace,Consolas,monospace;color:var(--ok);font-weight:700}
+.msg{font-size:13px;color:var(--mute)}
+.login{max-width:380px;margin:12vh auto 0;text-align:center}
+.login h1{font-size:28px;margin:0 0 6px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#13224a;border:1px solid var(--line);padding:10px 16px;border-radius:12px;display:none;font-size:14px;z-index:10}
+.preview-video{display:block;width:100%;max-width:640px;max-height:360px;background:#000;margin-top:12px;border-radius:12px}
+.guide-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.guide-item{border:1px solid var(--line);border-radius:12px;padding:14px;background:#0a1226}
+[hidden]{display:none!important}
+@media(max-width:700px){header{padding:12px}main{padding:14px 10px 40px}.logo{font-size:17px}.tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%}.tabs button{padding:10px 6px;font-size:12px}.panel{padding:15px;border-radius:14px}.guide-list{grid-template-columns:1fr}table{display:block;overflow-x:auto;white-space:nowrap}.row>.btn{max-width:100%}.toast{width:calc(100% - 24px);text-align:center}}
+</style>
+</head>
+<body>
+
+<section id="login" class="login">
+  <h1 class="rainbow">Key Super VN</h1>
+  <p class="hint">Khu vực quản trị</p>
+  <div class="panel">
+    <label>Email admin</label>
+    <input id="email" type="email" placeholder="email@cua-ban.com" autocomplete="username">
+    <label>Mật khẩu</label>
+    <input id="pass" type="password" placeholder="Nhập mật khẩu" autocomplete="current-password">
+    <div class="row" style="justify-content:center"><button class="btn" id="login-btn">Đăng nhập</button></div>
+    <p class="msg" id="login-msg"></p>
+  </div>
+</section>
+
+<section id="app" hidden>
+<header>
+  <div class="logo rainbow">KEY SUPER VN · ADMIN</div>
+  <div class="tabs">
+    <button data-t="prod" class="on">Sản phẩm</button>
+    <button data-t="ranking">🏆 Xếp hạng Top 10</button>
+    <button data-t="keys">Kho key</button>
+    <button data-t="orders">Đơn chờ</button>
+    <button data-t="guides">Hướng dẫn</button>
+    <button data-t="downloads">Link tải phần mềm</button>
+  </div>
+</header>
+<main>
+  <div id="t-prod">
+    <div class="panel">
+      <h2>Danh sách sản phẩm</h2>
+      <table><thead><tr><th>Tên</th><th>Danh mục</th><th>Tồn kho</th></tr></thead><tbody id="ptable"></tbody></table>
+    </div>
+    <div class="panel">
+      <h2>Thêm / sửa sản phẩm</h2>
+      <p class="hint">Chọn "Sản phẩm mới" để thêm, hoặc chọn một sản phẩm có sẵn để sửa.</p>
+      <label>Sản phẩm</label><select id="p-sel"></select>
+      <label>Tên sản phẩm</label><input id="p-name">
+      <label>Danh mục</label><input id="p-cat" placeholder="PROXY IOS / MENU IOS / MENU ANDROID">
+      <label>Mô tả</label><input id="p-desc">
+      <label>Kiểu nền khi chưa có ảnh</label>
+      <select id="p-style"><option value="novax">Xanh NovaX</option><option value="innova">Xanh lá Innova</option><option value="generic">Tím</option></select>
+      <label>Ảnh banner</label><input type="file" id="p-file" accept="image/*">
+      <div class="hint" id="p-imgmsg">Chọn ảnh từ máy để tải lên. Hoặc dán link ảnh vào ô bên dưới (tuỳ chọn).</div>
+      <input id="p-img" placeholder="https://...">
+      <label>Gói giá (mỗi dòng: tên|giá)</label>
+      <textarea id="p-pk" placeholder="1 Ngày|15000&#10;1 Tuần|70000&#10;1 Tháng|150000"></textarea>
+      <p class="hint">Quản lý thứ hạng Top 10 trong tab “🏆 Xếp hạng Top 10”.</p>
+      <div class="row"><button class="btn" id="p-save">Lưu sản phẩm</button><button class="btn ghost" id="p-del">Xóa sản phẩm</button></div>
+    </div>
+  </div>
+
+  <div id="t-ranking" hidden>
+    <div class="panel">
+      <h2>🏆 Xếp hạng Top 10 bán chạy</h2>
+      <p class="hint">Chọn một sản phẩm cho từng thứ hạng. Mỗi sản phẩm chỉ được xếp một hạng và mỗi hạng chỉ có một sản phẩm. Bấm lưu để cập nhật lên Supabase.</p>
+      <div id="rank-editor" class="guide-list"></div>
+      <div class="row"><button class="btn" id="rank-save">Lưu xếp hạng Top 10</button><button class="btn ghost" id="rank-reload">Tải lại</button><span id="rank-msg" class="msg"></span></div>
+    </div>
+  </div>
+
+  <div id="t-keys" hidden>
+    <div class="panel">
+      <h2>Nhập key vào kho</h2>
+      <p class="hint">Mỗi dòng là một key. Sau khi nhập, tồn kho sẽ tự cập nhật.</p>
+      <label>Sản phẩm</label><select id="k-sel"></select>
+      <label>Gói của key (phải khớp với gói sản phẩm)</label><select id="k-pkg"></select>
+      <label>Danh sách key</label><textarea id="k-list" placeholder="KEY-AAAA-1111&#10;KEY-BBBB-2222"></textarea>
+      <div class="row"><button class="btn" id="k-save">Thêm vào kho</button><span class="msg" id="k-msg"></span></div>
+    </div>
+  </div>
+
+  <div id="t-orders" hidden>
+    <div class="panel">
+      <h2>Đơn chờ thanh toán</h2>
+      <p class="hint">Kiểm tra tài khoản đã nhận đúng số tiền và đúng mã đơn trong nội dung chuyển khoản, rồi bấm "Xác nhận" để gán key cho khách.</p>
+      <table><thead><tr><th>Mã đơn</th><th>Sản phẩm</th><th>Gói</th><th>Số tiền</th><th></th></tr></thead><tbody id="otable"></tbody></table>
+      <div class="row"><button class="btn ghost sm" id="o-reload">Tải lại</button></div>
+    </div>
+  </div>  <!-- QUẢN LÝ VIDEO HƯỚNG DẪN -->
+  <div id="t-guides" hidden>
+    <div class="panel">
+      <h2>Danh sách hướng dẫn</h2>
+      <p class="hint">Chọn một hướng dẫn để sửa; khách chỉ thấy hướng dẫn được xuất bản.</p>
+      <div id="guide-list" class="guide-list"><p class="msg">Đang tải...</p></div>
+    </div>
+    <div class="panel">
+      <h2 id="g-form-title">Thêm video hướng dẫn</h2>
+      <p class="hint">Tải video trực tiếp lên Supabase Storage. Giới hạn 100 MB/video. Định dạng hỗ trợ: MP4, WebM, MOV.</p>
+      <label>Hướng dẫn</label>
+      <select id="g-sel"><option value="">+ Hướng dẫn mới</option></select>
+      <label>Tên hướng dẫn</label><input id="g-title" maxlength="140" placeholder="Ví dụ: Cách cài đặt NovaX Proxy">
+      <label>Mô tả</label><textarea id="g-desc" maxlength="5000" placeholder="Mô tả các bước thực hiện..."></textarea>
+      <label>Video (tối đa 100 MB)</label><input type="file" id="g-file" accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov">
+      <p class="hint" id="g-filemsg">Chọn file video từ điện thoại hoặc máy tính. Khi sửa, bỏ trống nếu muốn giữ video hiện tại.</p>
+      <video id="g-preview" class="preview-video" controls playsinline hidden></video>
+      <label><input id="g-published" type="checkbox" checked style="width:auto;margin-right:8px">Xuất bản để khách xem</label>
+      <div class="row"><button class="btn" id="g-save">Lưu hướng dẫn</button><button class="btn ghost" id="g-new">Làm mới</button><button class="btn ghost" id="g-del">Xóa hướng dẫn</button><span class="msg" id="g-msg"></span></div>
+    </div>
+  </div>
+
+  <!-- QUẢN LÝ LINK TẢI PHẦN MỀM -->
+  <div id="t-downloads" hidden>
+    <div class="panel">
+      <h2>Danh sách phần mềm</h2>
+      <p class="hint">Khách sẽ thấy các phần mềm đã xuất bản, kèm mô tả và nút tải bằng link.</p>
+      <div id="download-list" class="guide-list"><p class="msg">Đang tải...</p></div>
+    </div>
+    <div class="panel">
+      <h2 id="d-form-title">Thêm link tải phần mềm</h2>
+      <label>Chọn phần mềm</label>
+      <select id="d-sel"><option value="">+ Phần mềm mới</option></select>
+      <label>Tên phần mềm</label>
+      <input id="d-title" maxlength="140" placeholder="Ví dụ: NovaX Proxy iOS">
+      <label>Mô tả / thông tin</label>
+      <textarea id="d-desc" maxlength="5000" placeholder="Phiên bản, hệ điều hành hỗ trợ, cách cài đặt..."></textarea>
+      <label>Link tải phần mềm</label>
+      <input id="d-url" type="url" placeholder="https://..." inputmode="url">
+      <label>Ảnh phần mềm (không bắt buộc)</label>
+      <input type="file" id="d-file" accept="image/*">
+      <div class="hint">Chọn ảnh từ máy để tải lên. Hoặc dán link ảnh vào ô bên dưới.</div>
       <input id="d-image" type="url" placeholder="https://...">
       <label><input id="d-published" type="checkbox" checked style="width:auto;margin-right:8px">Xuất bản để khách xem</label>
       <div class="row"><button class="btn" id="d-save">Lưu phần mềm</button><button class="btn ghost" id="d-new">Làm mới</button><button class="btn ghost" id="d-del">Xóa phần mềm</button><span class="msg" id="d-msg"></span></div>
@@ -6,226 +176,195 @@
 </main>
 </section>
 
-<div class="toast" id="toast"></div><script>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===== CẤU HÌNH ===== */
 const SB_URL = "https://raztcloppwdzqyshlepp.supabase.co";
 const SB_KEY = "sb_publishable_ZBNx15WHWgcQqQB2qvwjpA_nRjrep5W";
-const sb = window.supabase?.createClient(SB_URL, SB_KEY);
+const sb = (window.supabase && !SB_URL.startsWith("PASTE")) ? window.supabase.createClient(SB_URL, SB_KEY) : null;
 
-let products = [], guideVideos = [], selectedGuide = null, guidePreviewUrl = "";
-let downloadItems = [], selectedDownload = null;
+let products = [];
+let guideVideos = [];
+let selectedGuide = null;
+let guidePreviewUrl = "";
+let downloadItems = [];
+let selectedDownload = null;
 const GUIDE_BUCKET = "guide-videos";
 const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
 const $ = id => document.getElementById(id);
-const fmt = n => Number(n || 0).toLocaleString("vi-VN") + "đ";
-const esc = s => String(s ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-function toast(t){
-  const el=$("toast"); el.textContent=t; el.style.display="block";
-  clearTimeout(el._t); el._t=setTimeout(()=>el.style.display="none",3000);
-}
+const fmt = n => Number(n).toLocaleString("vi-VN")+"đ";
+const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function toast(t){ const el=$("toast"); el.textContent=t; el.style.display="block"; clearTimeout(el._t); el._t=setTimeout(()=>el.style.display="none",2600); }
 function driveDirect(url){
-  if(!url)return "";
-  const m=url.match(/\/d\/([\w-]+)/)||url.match(/[?&]id=([\w-]+)/);
-  return m?"https://lh3.googleusercontent.com/d/"+m[1]:url;
-}
-async function currentAdmin(){
-  const {data,error}=await sb.auth.getUser();
-  const user=data?.user;
-  return !error && user?.app_metadata?.role==="admin" ? user : null;
+  if(!url) return "";
+  const m = url.match(/\/d\/([\w-]+)/) || url.match(/[?&]id=([\w-]+)/);
+  return m ? "https://lh3.googleusercontent.com/d/"+m[1] : url;
 }
 
-$("login-btn").onclick=login;
-$("pass").onkeydown=e=>{if(e.key==="Enter")login();};
+/* ===== Đăng nhập (Supabase Auth) ===== */
+$("login-btn").onclick = login;
+$("pass").onkeydown = e => { if(e.key==="Enter") login(); };
 async function login(){
-  if(!sb){$("login-msg").textContent="Chưa cấu hình Supabase.";return;}
+  if(!sb) return $("login-msg").textContent="Chưa cấu hình Supabase.";
   $("login-msg").textContent="Đang đăng nhập...";
-  const {data,error}=await sb.auth.signInWithPassword({
-    email:$("email").value.trim(),password:$("pass").value
-  });
-  if(error){$("login-msg").textContent="Đăng nhập thất bại: "+error.message;return;}
-  if(data?.user?.app_metadata?.role!=="admin"){
+  const {data,error} = await sb.auth.signInWithPassword({email:$("email").value.trim(), password:$("pass").value});
+  if(error){ $("login-msg").textContent="Sai email hoặc mật khẩu."; return; }
+  if(data?.user?.app_metadata?.role !== "admin"){
     await sb.auth.signOut();
-    $("login-msg").textContent="Tài khoản chưa được cấp quyền admin.";
+    $("login-msg").textContent="Tài khoản chưa được cấp quyền admin. Liên hệ chủ dự án.";
     return;
   }
   showApp();
 }
-function showApp(){
-  $("login").hidden=true;$("app").hidden=false;loadAll();
-}
+function showApp(){ $("login").hidden=true; $("app").hidden=false; loadAll(); }
 (async()=>{
-  if(!sb)return;
+  if(!sb) return;
   const {data}=await sb.auth.getSession();
   if(data?.session){
-    const {data:u}=await sb.auth.getUser();
-    if(u?.user?.app_metadata?.role==="admin")showApp();
-    else await sb.auth.signOut();
+    const {data:userData}=await sb.auth.getUser();
+    if(userData?.user?.app_metadata?.role === "admin") showApp();
+    else { await sb.auth.signOut(); $("login-msg").textContent="Tài khoản chưa được cấp quyền admin."; }
   }
 })();
 
-async function loadAll(){
-  await getProducts();
-  renderProducts();renderSelects();
-  await Promise.allSettled([loadOrders(),loadGuideVideos(),loadDownloads()]);
-}
+/* ===== Tải dữ liệu ===== */
+async function loadAll(){ await getProducts(); renderProducts(); renderSelects(); loadOrders(); loadGuideVideos(); }
 async function getProducts(){
-  const {data,error}=await sb.rpc("get_products");
-  if(error){
-    toast("Không tải được sản phẩm: "+error.message);
-    products=[];return;
-  }
-  products=(data||[]).map(p=>({...p,desc:p.descr,pk:normalPk(p.pk)}));
-
-  // Nếu cột best_rank chưa được tạo, báo rõ thay vì làm hỏng phần sửa giá.
-  const {data:ranks,error:rankError}=await sb.from("products").select("id,best_rank");
+  const {data,error} = await sb.rpc("get_products");
+  if(error){ products=[]; toast("Không tải được sản phẩm: "+error.message); return; }
+  products=(data||[]).map(p=>({...p,desc:p.descr,best_rank:null}));
+  // Lỗi tải thứ hạng không được chặn việc chỉnh sửa giá.
+  const {data:rk,error:rankError}=await sb.from("products").select("id,best_rank");
   if(!rankError){
-    (ranks||[]).forEach(r=>{
-      const p=products.find(x=>String(x.id)===String(r.id));
-      if(p)p.best_rank=r.best_rank;
-    });
-  } else if(!rankError.message?.includes("best_rank")){
-    console.warn("Không tải được thứ hạng:",rankError.message);
+    (rk||[]).forEach(r=>{const p=products.find(x=>String(x.id)===String(r.id));if(p)p.best_rank=r.best_rank;});
+  }else{
+    console.warn("Chưa tải được Top 10. Kiểm tra cột best_rank trong Supabase:",rankError.message);
   }
-}
-function normalPk(value){
-  if(Array.isArray(value))return value.map(x=>({
-    l:String(x.l??x.name??""),p:Number(x.p??x.price??0)
-  }));
-  if(typeof value==="string"){
-    try{return normalPk(JSON.parse(value));}catch{return [];}
-  }
-  return [];
 }
 function renderProducts(){
-  $("ptable").innerHTML=products.map(p=>{
-    const stock=Number(p.stock||0);
-    const details=Object.entries(p.pkg_stock||{}).map(([k,v])=>esc(k)+": "+v).join(" · ");
-    return `<tr><td>${esc(p.name)}</td><td>${esc(p.cat)}</td><td><span class="stock ${stock>0?"in":"out"}">${stock}</span> <span class="hint">${details}</span></td></tr>`;
-  }).join("")||'<tr><td colspan="3" class="msg">Chưa có sản phẩm.</td></tr>';
+  $("ptable").innerHTML = products.map(p=>{
+    const st=Number(p.stock||0);
+    return `<tr><td>${esc(p.name)}</td><td>${esc(p.cat)}</td><td><span class="stock ${st>0?"in":"out"}">${st}</span> <span class="hint">${Object.entries(p.pkg_stock||{}).map(([k,v])=>k+": "+v).join(" · ")}</span></td></tr>`;
+  }).join("") || `<tr><td colspan="3" class="msg">Chưa có sản phẩm.</td></tr>`;
 }
 function renderSelects(){
-  const opts=products.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("");
-  $("p-sel").innerHTML='<option value="">+ Sản phẩm mới</option>'+opts;
-  $("k-sel").innerHTML=opts;
+  const opts = products.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("");
+  $("p-sel").innerHTML = `<option value="">+ Sản phẩm mới</option>`+opts;
+  $("k-sel").innerHTML = opts;
   renderKPkg();
 }
-function renderKPkg(){
-  const p=products.find(x=>String(x.id)===String($("k-sel").value));
-  $("k-pkg").innerHTML=(p?.pk||[]).map(x=>`<option value="${esc(x.l)}">${esc(x.l)}</option>`).join("");
-}
+function renderKPkg(){ const p=products.find(x=>x.id===$("k-sel").value); $("k-pkg").innerHTML=(p?p.pk||[]:[]).map(x=>`<option value="${esc(x.l)}">${esc(x.l)}</option>`).join(""); }
 $("k-sel").onchange=renderKPkg;
-$("p-sel").onchange=()=>{
-  const p=products.find(x=>String(x.id)===String($("p-sel").value))||
-    {name:"",cat:"",desc:"",style:"generic",img:"",pk:[]};
-  $("p-name").value=p.name||"";
-  $("p-cat").value=p.cat||"";
-  $("p-desc").value=p.desc||"";
-  $("p-style").value=p.style||"generic";
-  $("p-img").value=p.img||"";
-  $("p-pk").value=(p.pk||[]).map(x=>x.l+"|"+x.p).join("\n");
+$("p-sel").onchange = () => {
+  const p = products.find(x=>x.id===$("p-sel").value) || {name:"",cat:"",desc:"",style:"generic",img:"",pk:[]};
+  $("p-name").value=p.name; $("p-cat").value=p.cat; $("p-desc").value=p.desc||""; $("p-style").value=p.style||"generic";
+  $("p-img").value=p.img||""; $("p-pk").value=(p.pk||[]).map(x=>x.l+"|"+x.p).join("\n");
 };
 
-$("p-file").onchange=async e=>{
-  const file=e.target.files[0];if(!file)return;
-  $("p-imgmsg").textContent="Đang tải ảnh lên...";
-  const path=Date.now()+"-"+file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
-  const {error}=await sb.storage.from("product-images").upload(path,file);
-  if(error){$("p-imgmsg").textContent="Lỗi tải ảnh: "+error.message;return;}
-  $("p-img").value=sb.storage.from("product-images").getPublicUrl(path).data.publicUrl;
-  $("p-imgmsg").textContent="Đã tải ảnh. Bấm Lưu sản phẩm để áp dụng.";
+/* ===== Tải ảnh sản phẩm lên Supabase Storage ===== */
+$("p-file").onchange = async e => {
+  const file = e.target.files[0]; if(!file) return;
+  $("p-imgmsg").textContent = "Đang tải ảnh lên...";
+  const path = Date.now()+"-"+file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+  const {error} = await sb.storage.from("product-images").upload(path, file);
+  if(error){ $("p-imgmsg").textContent = "Lỗi tải ảnh: "+error.message; return; }
+  $("p-img").value = sb.storage.from("product-images").getPublicUrl(path).data.publicUrl;
+  $("p-imgmsg").textContent = "Đã tải ảnh. Bấm Lưu sản phẩm để áp dụng.";
 };
 
-/* Lưu sản phẩm và gói giá */
-$("p-save").onclick=async()=>{
-  const admin=await currentAdmin();
-  if(!admin)return toast("Tài khoản chưa được cấp quyền admin.");
-  const name=$("p-name").value.trim();
-  if(!name)return toast("Nhập tên sản phẩm.");
-
-  const lines=$("p-pk").value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+/* ===== Sản phẩm ===== */
+$("p-save").onclick = async () => {
+  if(!(await currentAdmin())) return toast("Tài khoản chưa được cấp quyền admin.");
+  const name = $("p-name").value.trim();
+  if(!name) return toast("Nhập tên sản phẩm");
+  const lines=$("p-pk").value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
   const pk=[];
   for(const line of lines){
-    const idx=line.lastIndexOf("|");
-    if(idx<1)return toast('Sai định dạng gói giá: "'+line+'". Dùng Tên gói|Giá.');
-    const label=line.slice(0,idx).trim();
-    const priceText=line.slice(idx+1).trim().replace(/[,\s]/g,"");
-    const price=Number(priceText);
-    if(!label||!Number.isFinite(price)||price<0)return toast('Giá không hợp lệ ở dòng: "'+line+'".');
-    pk.push({l:label,p:price});
+    const i=line.lastIndexOf("|");
+    if(i<1) return toast('Sai định dạng gói giá: "'+line+'". Dùng Tên gói|Giá.');
+    const l=line.slice(0,i).trim(), raw=line.slice(i+1).trim().replace(/[\s,]/g,""), p=Number(raw);
+    if(!l||raw===""||!Number.isFinite(p)||p<0) return toast('Giá không hợp lệ ở dòng: "'+line+'".');
+    pk.push({l,p});
   }
-
-  const existingId=$("p-sel").value;
-  const id=existingId||(name.toLowerCase().normalize("NFD")
-    .replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-")
-    .replace(/^-|-$/g,"")||"sp")+"-"+Math.random().toString(36).slice(2,6);
-
-  const row={
-    id,name,cat:$("p-cat").value.trim(),descr:$("p-desc").value.trim(),
-    style:$("p-style").value,img:driveDirect($("p-img").value.trim()),pk
-  };
-  $("p-save").disabled=true;
-  try{
-    const {error}=await sb.from("products").upsert(row,{onConflict:"id"});
-    if(error){toast("Lỗi lưu sản phẩm/giá: "+error.message);return;}
-    toast("Đã lưu sản phẩm và giá.");
-    await loadAll();
-    $("p-sel").value=id;
-    $("p-sel").dispatchEvent(new Event("change"));
-  }catch(e){
-    toast("Lỗi lưu sản phẩm/giá: "+(e.message||e));
-  }finally{$("p-save").disabled=false;}
-};
-
+  const id = $("p-sel").value || (name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"sp")+"-"+Math.random().toString(36).slice(2,6);
+  const {error} = await sb.from("products").upsert({
+    id, name, cat:$("p-cat").value.trim(), descr:$("p-desc").value.trim(),
+    style:$("p-style").value, img:driveDirect($("p-img").value.trim()), pk
+  });
+  if(error) return toast("Lỗi lưu sản phẩm/giá: "+error.message);
+  toast("Đã lưu sản phẩm và giá"); await loadAll(); $("p-sel").value=id; $("p-sel").dispatchEvent(new Event("change"));
+};/* ===== Xóa sản phẩm ===== */
 $("p-del").onclick=async()=>{
   const id=$("p-sel").value;
   if(!id)return toast("Chọn sản phẩm cần xóa.");
-  if(!confirm('Xóa sản phẩm "'+$("p-name").value+'"?'))return;
+  if(!(await currentAdmin()))return toast("Tài khoản chưa được cấp quyền admin.");
+  if(!confirm("Xóa sản phẩm này?"))return;
   const {error}=await sb.from("products").delete().eq("id",id);
-  if(error)return toast("Không xóa được: "+error.message);
+  if(error)return toast("Lỗi xóa: "+error.message);
   toast("Đã xóa sản phẩm.");await loadAll();
 };
 
+/* ===== Kiểm tra quyền admin ===== */
+async function currentAdmin(){
+  const {data,error}=await sb.auth.getUser();
+  if(error||!data?.user||data.user.app_metadata?.role!=="admin")return null;
+  return data.user;
+}
+
+/* ===== Kho key ===== */
 $("k-save").onclick=async()=>{
-  const product=$("k-sel").value;
-  const values=$("k-list").value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
-  if(!product||!values.length)return $("k-msg").textContent="Chọn sản phẩm và nhập key.";
+  if(!(await currentAdmin()))return toast("Tài khoản chưa được cấp quyền admin.");
+  const productId=$("k-sel").value;
   const pkg=$("k-pkg").value;
-  if(!pkg)return $("k-msg").textContent="Sản phẩm chưa có gói giá tương ứng.";
-  const {error}=await sb.from("license_keys").insert(values.map(value=>({product,value,pkg})));
-  if(error)return $("k-msg").textContent="Lỗi: "+error.message;
-  $("k-msg").textContent=`Đã thêm ${values.length} key.`;$("k-list").value="";
+  const keys=$("k-list").value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  if(!productId||!pkg)return toast("Chọn sản phẩm và gói key.");
+  if(!keys.length)return toast("Nhập danh sách key.");
+  const rows=keys.map(key=>({product_id:productId,package_name:pkg,key_value:key}));
+  const {error}=await sb.from("keys").insert(rows);
+  if(error){$("k-msg").textContent="Lỗi thêm key: "+error.message;return;}
+  $("k-list").value="";$("k-msg").textContent="Đã thêm "+keys.length+" key.";
   await loadAll();
 };
 
-$("o-reload").onclick=loadOrders;
+/* ===== Đơn chờ ===== */
 async function loadOrders(){
-  const {data,error}=await sb.from("orders").select("*").eq("status","pending").order("created",{ascending:false});
+  const {data,error}=await sb.from("orders").select("*").eq("status","pending").order("created_at",{ascending:false});
   if(error){$("otable").innerHTML=`<tr><td colspan="5" class="msg">Không tải được đơn: ${esc(error.message)}</td></tr>`;return;}
-  $("otable").innerHTML=(data||[]).map(o=>`<tr>
-    <td class="code">${esc(o.code)}</td><td>${esc(o.pname||o.product)}</td>
-    <td>${esc(o.pkg)}</td><td>${fmt(o.amount)}</td>
-    <td><button class="btn sm" data-c="${esc(o.code)}">Xác nhận</button></td></tr>`
-  ).join("")||'<tr><td colspan="5" class="msg">Không có đơn chờ.</td></tr>';
-  document.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>confirmOrder(b.dataset.c));
+  $("otable").innerHTML=(data||[]).map(o=>`
+    <tr>
+      <td>${esc(o.order_code||o.id)}</td>
+      <td>${esc(o.product_name||o.product_id)}</td>
+      <td>${esc(o.package_name||o.package||"")}</td>
+      <td>${fmt(o.amount||o.price||0)}</td>
+      <td><button class="btn sm" data-confirm-order="${esc(o.id)}">Xác nhận</button></td>
+    </tr>`).join("")||'<tr><td colspan="5" class="msg">Không có đơn chờ.</td></tr>';
+  document.querySelectorAll("[data-confirm-order]").forEach(b=>b.onclick=()=>confirmOrder(b.dataset.confirmOrder));
 }
-async function confirmOrder(code){
-  const {data:o,error}=await sb.from("orders").select("amount").eq("code",code).single();
-  if(error)return toast("Không đọc được đơn: "+error.message);
-  const need=Number(o?.amount||0);
-  const input=prompt(`Đơn ${code}: cần ${fmt(need)}.\nNhập số tiền thực tế đã nhận:`);
-  if(input===null)return;
-  const received=Number(String(input).replace(/[^0-9]/g,""));
-  if(!received||received<need)return toast(`Số tiền ${fmt(received)} chưa đủ ${fmt(need)}.`);
-  if(!confirm(`Xác nhận đã nhận ${fmt(received)} cho đơn ${code}?`))return;
-  const {error:rpcError}=await sb.rpc("confirm_order",{p_code:code,p_received:received});
-  if(rpcError)return toast("Lỗi xác nhận đơn: "+rpcError.message);
-  toast("Đã xác nhận đơn "+code);await loadAll();
-}/* ===== Video hướng dẫn ===== */
+$("o-reload").onclick=loadOrders;
+async function confirmOrder(id){
+  if(!(await currentAdmin()))return toast("Tài khoản chưa được cấp quyền admin.");
+  if(!confirm("Đã kiểm tra giao dịch và xác nhận đã nhận tiền?"))return;
+  const {data:order,error}=await sb.from("orders").select("*").eq("id",id).single();
+  if(error||!order)return toast("Không tải được đơn hàng.");
+  const {data:keys,error:keyError}=await sb.from("keys").select("*")
+    .eq("product_id",order.product_id)
+    .eq("package_name",order.package_name||order.package)
+    .eq("is_sold",false).limit(1);
+  if(keyError)return toast("Lỗi lấy key: "+keyError.message);
+  if(!keys?.length)return toast("Kho không còn key phù hợp.");
+  const key=keys[0];
+  const {error:markError}=await sb.from("keys").update({is_sold:true,order_id:order.id}).eq("id",key.id);
+  if(markError)return toast("Lỗi gán key: "+markError.message);
+  const {error:orderError}=await sb.from("orders").update({status:"completed",key_value:key.key_value}).eq("id",order.id);
+  if(orderError)return toast("Đã gán key nhưng cập nhật đơn thất bại: "+orderError.message);
+  toast("Đã xác nhận đơn và gán key.");await loadOrders();await loadAll();
+}
+
+/* ===== Video hướng dẫn ===== */
 async function loadGuideVideos(){
   const {data,error}=await sb.from("guide_videos").select("*").order("created_at",{ascending:false});
-  if(error){
-    $("guide-list").innerHTML='<p class="msg">Không tải được danh sách: '+esc(error.message)+'</p>';
-    return;
-  }
+  if(error){$("guide-list").innerHTML=`<p class="msg">Lỗi tải hướng dẫn: ${esc(error.message)}</p>`;return;}
   guideVideos=data||[];
   $("guide-list").innerHTML=guideVideos.map(g=>`
     <div class="guide-item">
@@ -234,136 +373,106 @@ async function loadGuideVideos(){
       <p class="msg">${g.is_published?"Đang xuất bản":"Đang ẩn"}</p>
       <button class="btn sm" data-guide-edit="${esc(g.id)}">Sửa</button>
     </div>`).join("")||'<p class="msg">Chưa có hướng dẫn nào.</p>';
-  $("g-sel").innerHTML='<option value="">+ Hướng dẫn mới</option>'+
-    guideVideos.map(g=>`<option value="${esc(g.id)}">${esc(g.title)}</option>`).join("");
+  $("g-sel").innerHTML='<option value="">+ Hướng dẫn mới</option>'+guideVideos.map(g=>`<option value="${esc(g.id)}">${esc(g.title)}</option>`).join("");
   document.querySelectorAll("[data-guide-edit]").forEach(b=>b.onclick=()=>selectGuide(b.dataset.guideEdit));
 }
 function clearGuideForm(){
   selectedGuide=null;$("g-sel").value="";$("g-title").value="";$("g-desc").value="";
-  $("g-file").value="";$("g-published").checked=true;
-  $("g-form-title").textContent="Thêm video hướng dẫn";
-  $("g-filemsg").textContent="Chọn file video từ máy hoặc điện thoại.";
-  $("g-msg").textContent="";
-  if(guidePreviewUrl)URL.revokeObjectURL(guidePreviewUrl);
-  guidePreviewUrl="";$("g-preview").removeAttribute("src");$("g-preview").hidden=true;
+  $("g-file").value="";$("g-published").checked=true;$("g-form-title").textContent="Thêm video hướng dẫn";
+  $("g-filemsg").textContent="Chọn file video từ điện thoại hoặc máy tính.";
+  $("g-msg").textContent="";$("g-preview").hidden=true;$("g-preview").removeAttribute("src");
 }
 function selectGuide(id){
   const g=guideVideos.find(x=>String(x.id)===String(id));if(!g)return;
   selectedGuide=g;$("g-sel").value=g.id;$("g-title").value=g.title||"";
   $("g-desc").value=g.description||"";$("g-published").checked=!!g.is_published;
-  $("g-file").value="";$("g-form-title").textContent="Cập nhật video hướng dẫn";
-  $("g-filemsg").textContent="Đang dùng video hiện tại. Chọn file mới nếu muốn thay.";
-  if(guidePreviewUrl)URL.revokeObjectURL(guidePreviewUrl);
-  guidePreviewUrl="";$("g-preview").src=g.video_url||"";$("g-preview").hidden=!g.video_url;
+  $("g-form-title").textContent="Cập nhật hướng dẫn";
+  $("g-filemsg").textContent=g.video_url?"Đã có video. Chọn video mới nếu muốn thay thế.":"Chưa có video.";
+  if(g.video_url){$("g-preview").src=g.video_url;$("g-preview").hidden=false;}
   $("g-msg").textContent="";
 }
 $("g-sel").onchange=()=> $("g-sel").value?selectGuide($("g-sel").value):clearGuideForm();
 $("g-new").onclick=clearGuideForm;
-$("g-file").onchange=()=>{
-  const file=$("g-file").files[0];
-  if(guidePreviewUrl)URL.revokeObjectURL(guidePreviewUrl);
-  guidePreviewUrl="";
-  if(!file){
-    if(selectedGuide){$("g-preview").src=selectedGuide.video_url||"";$("g-preview").hidden=!selectedGuide.video_url;}
-    else $("g-preview").hidden=true;
-    return;
-  }
-  if(file.size>MAX_VIDEO_BYTES){
-    $("g-file").value="";$("g-filemsg").textContent="File vượt quá 100 MB.";return;
-  }
-  if(!["video/mp4","video/webm","video/quicktime"].includes(file.type)){
-    $("g-file").value="";$("g-filemsg").textContent="Chỉ hỗ trợ MP4, WebM hoặc MOV.";return;
-  }
-  guidePreviewUrl=URL.createObjectURL(file);
-  $("g-preview").src=guidePreviewUrl;$("g-preview").hidden=false;
-  $("g-filemsg").textContent=`${file.name} · ${(file.size/1024/1024).toFixed(1)} MB`;
-};
 $("g-save").onclick=async()=>{
-  const admin=await currentAdmin();
-  if(!admin)return toast("Tài khoản chưa được cấp quyền admin.");
-  const title=$("g-title").value.trim(),description=$("g-desc").value.trim(),file=$("g-file").files[0];
+  const admin=await currentAdmin();if(!admin)return toast("Tài khoản chưa được cấp quyền admin.");
+  const title=$("g-title").value.trim(),file=$("g-file").files[0];
   if(!title)return toast("Nhập tên hướng dẫn.");
-  if(!selectedGuide&&!file)return toast("Chọn video cho hướng dẫn mới.");
+  if(!selectedGuide&&!file)return toast("Chọn file video cho hướng dẫn mới.");
   if(file&&file.size>MAX_VIDEO_BYTES)return toast("Video vượt quá 100 MB.");
-
   let videoUrl=selectedGuide?.video_url||"",videoPath=selectedGuide?.video_path||"";
   const oldPath=videoPath;
   if(file){
     const ext=(file.name.split(".").pop()||"mp4").toLowerCase();
     const path=`${admin.id}/${crypto.randomUUID()}.${ext}`;
-    $("g-msg").textContent="Đang tải video lên...";
+    $("g-msg").textContent="Đang tải video lên: 0%";
     const {data:sessionData}=await sb.auth.getSession();
-    const token=sessionData?.session?.access_token;
-    if(!token){$("g-msg").textContent="Phiên đăng nhập hết hạn.";return;}
+    const accessToken=sessionData?.session?.access_token;
+    if(!accessToken){$("g-msg").textContent="Phiên đăng nhập hết hạn. Đăng nhập lại rồi thử tiếp.";return;}
     try{
       await new Promise((resolve,reject)=>{
-        if(!window.tus?.Upload){reject(new Error("Không tải được thư viện upload."));return;}
+        if(!window.tus||!window.tus.Upload){reject(new Error("Không tải được thư viện upload video."));return;}
         const upload=new tus.Upload(file,{
           endpoint:`${SB_URL}/storage/v1/upload/resumable`,
           retryDelays:[0,1000,3000,5000,10000],
-          headers:{authorization:`Bearer ${token}`,apikey:SB_KEY,"x-upsert":"false"},
+          headers:{authorization:`Bearer ${accessToken}`,apikey:SB_KEY,"x-upsert":"false"},
           uploadDataDuringCreation:true,removeFingerprintOnSuccess:true,
           metadata:{bucketName:GUIDE_BUCKET,objectName:path,contentType:file.type||"video/mp4",cacheControl:"3600"},
-          onError:reject,
-          onProgress:(a,b)=>{$("g-msg").textContent=`Đang tải: ${Math.round(a/b*100)}%`;},
-          onSuccess:resolve
-        });
-        upload.start();
+          onError:error=>reject(error),
+          onProgress:(bytesUploaded,bytesTotal)=>{$("g-msg").textContent=`Đang tải video lên: ${Math.round(bytesUploaded/bytesTotal*100)}%`;},
+          onSuccess:()=>resolve()
+        });upload.start();
       });
-    }catch(e){$("g-msg").textContent="Lỗi tải video: "+(e.message||e);return;}
-    videoPath=path;
-    videoUrl=sb.storage.from(GUIDE_BUCKET).getPublicUrl(path).data.publicUrl;
+    }catch(uploadError){$("g-msg").textContent="Lỗi tải video: "+(uploadError.message||uploadError);return;}
+    videoPath=path;videoUrl=sb.storage.from(GUIDE_BUCKET).getPublicUrl(path).data.publicUrl;
   }
-  const row={title,description,video_url:videoUrl,video_path:videoPath,
-    is_published:$("g-published").checked,updated_at:new Date().toISOString()};
+  const row={title,description:$("g-desc").value.trim(),video_url:videoUrl,video_path:videoPath,is_published:$("g-published").checked,updated_at:new Date().toISOString()};
   const result=selectedGuide
-    ?await sb.from("guide_videos").update(row).eq("id",selectedGuide.id)
-    :await sb.from("guide_videos").insert(row);
+    ?await sb.from("guide_videos").update(row).eq("id",selectedGuide.id).select().single()
+    :await sb.from("guide_videos").insert(row).select().single();
   if(result.error){$("g-msg").textContent="Lỗi lưu: "+result.error.message;return;}
-  if(file&&oldPath&&oldPath!==videoPath)await sb.storage.from(GUIDE_BUCKET).remove([oldPath]);
+  if(file&&oldPath&&oldPath!==videoPath){
+    const {error:delErr}=await sb.storage.from(GUIDE_BUCKET).remove([oldPath]);
+    if(delErr)toast("Đã cập nhật hướng dẫn, nhưng không xóa được video cũ.");
+  }
   toast("Đã lưu hướng dẫn.");clearGuideForm();await loadGuideVideos();
 };
 $("g-del").onclick=async()=>{
   if(!selectedGuide)return toast("Chọn hướng dẫn cần xóa.");
-  if(!await currentAdmin())return toast("Không có quyền admin.");
-  if(!confirm(`Xóa hướng dẫn "${selectedGuide.title}"?`))return;
+  if(!(await currentAdmin()))return toast("Tài khoản chưa được cấp quyền admin.");
+  if(!confirm(`Xóa hướng dẫn “${selectedGuide.title}”?`))return;
   const g=selectedGuide;
   const {error}=await sb.from("guide_videos").delete().eq("id",g.id);
-  if(error)return toast("Lỗi xóa: "+error.message);
-  if(g.video_path)await sb.storage.from(GUIDE_BUCKET).remove([g.video_path]);
+  if(error)return toast("Không xóa được: "+error.message);
+  if(g.video_path){
+    const {error:storageError}=await sb.storage.from(GUIDE_BUCKET).remove([g.video_path]);
+    if(storageError)toast("Đã xóa mục nhưng file video cũ cần xóa thủ công trong Storage.");
+  }
   clearGuideForm();await loadGuideVideos();toast("Đã xóa hướng dẫn.");
 };
 
-/* ===== Link tải phần mềm ===== */
+/* ===== Quản lý link tải phần mềm ===== */
 function safeHttpUrl(value){
-  try{
-    const u=new URL(String(value||"").trim());
-    return ["https:","http:"].includes(u.protocol)?u.href:"";
-  }catch{return "";}
+  try{const u=new URL(String(value||"").trim());return ["https:","http:"].includes(u.protocol)?u.href:"";}
+  catch{return "";}
 }
 async function loadDownloads(){
   const {data,error}=await sb.from("software_downloads").select("*").order("created_at",{ascending:false});
-  if(error){
-    $("download-list").innerHTML='<p class="msg">Không tải được danh sách: '+esc(error.message)+'</p>';
-    return;
-  }
+  if(error){$("download-list").innerHTML='<p class="msg">Không tải được danh sách. Hãy chạy SQL tạo bảng software_downloads.</p>';return;}
   downloadItems=data||[];
   $("download-list").innerHTML=downloadItems.map(d=>`
-    <div class="guide-item">
-      <strong>${esc(d.title)}</strong><p class="hint">${esc(d.description||"")}</p>
+    <div class="guide-item"><strong>${esc(d.title)}</strong>
+      <p class="hint">${esc(d.description||"")}</p>
       <p class="msg">${d.is_published?"Đang xuất bản":"Đang ẩn"}</p>
-      <a href="${esc(d.download_url)}" target="_blank" rel="noopener noreferrer"
-        style="color:var(--acc);overflow-wrap:anywhere">${esc(d.download_url)}</a>
+      <a href="${esc(d.download_url)}" target="_blank" rel="noopener noreferrer" style="color:var(--acc);overflow-wrap:anywhere">${esc(d.download_url)}</a>
       <div class="row"><button class="btn sm" data-download-edit="${esc(d.id)}">Sửa</button></div>
     </div>`).join("")||'<p class="msg">Chưa có phần mềm nào.</p>';
-  $("d-sel").innerHTML='<option value="">+ Phần mềm mới</option>'+
-    downloadItems.map(d=>`<option value="${esc(d.id)}">${esc(d.title)}</option>`).join("");
+  $("d-sel").innerHTML='<option value="">+ Phần mềm mới</option>'+downloadItems.map(d=>`<option value="${esc(d.id)}">${esc(d.title)}</option>`).join("");
   document.querySelectorAll("[data-download-edit]").forEach(b=>b.onclick=()=>selectDownload(b.dataset.downloadEdit));
 }
 function clearDownloadForm(){
   selectedDownload=null;$("d-sel").value="";$("d-title").value="";$("d-desc").value="";
-  $("d-url").value="";$("d-image").value="";$("d-file").value="";
-  $("d-published").checked=true;$("d-form-title").textContent="Thêm link tải phần mềm";$("d-msg").textContent="";
+  $("d-url").value="";$("d-image").value="";$("d-file").value="";$("d-published").checked=true;
+  $("d-form-title").textContent="Thêm link tải phần mềm";$("d-msg").textContent="";
 }
 function selectDownload(id){
   const d=downloadItems.find(x=>String(x.id)===String(id));if(!d)return;
@@ -371,6 +480,7 @@ function selectDownload(id){
   $("d-desc").value=d.description||"";$("d-url").value=d.download_url||"";
   $("d-image").value=d.image_url||"";$("d-published").checked=!!d.is_published;
   $("d-form-title").textContent="Cập nhật phần mềm";$("d-msg").textContent="";
+  $("t-downloads").scrollIntoView({behavior:"smooth",block:"start"});
 }
 $("d-sel").onchange=()=> $("d-sel").value?selectDownload($("d-sel").value):clearDownloadForm();
 $("d-new").onclick=clearDownloadForm;
@@ -384,42 +494,39 @@ $("d-file").onchange=async e=>{
   $("d-msg").textContent="Đã tải ảnh. Bấm Lưu phần mềm để áp dụng.";
 };
 $("d-save").onclick=async()=>{
-  if(!await currentAdmin())return toast("Tài khoản chưa được cấp quyền admin.");
+  if(!(await currentAdmin()))return toast("Tài khoản chưa được cấp quyền admin.");
   const title=$("d-title").value.trim(),description=$("d-desc").value.trim();
   const downloadUrl=safeHttpUrl($("d-url").value);
-  const imageText=$("d-image").value.trim(),imageUrl=imageText?safeHttpUrl(imageText):"";
+  const imageUrl=$("d-image").value.trim()?safeHttpUrl($("d-image").value):"";
   if(!title)return toast("Nhập tên phần mềm.");
-  if(!downloadUrl)return toast("Nhập link tải hợp lệ.");
-  if(imageText&&!imageUrl)return toast("Link ảnh không hợp lệ.");
-  const row={title,description,download_url:downloadUrl,image_url:imageUrl,
-    is_published:$("d-published").checked,updated_at:new Date().toISOString()};
+  if(!downloadUrl)return toast("Nhập link tải hợp lệ bắt đầu bằng https:// hoặc http://.");
+  if($("d-image").value.trim()&&!imageUrl)return toast("Link ảnh không hợp lệ.");
+  const row={title,description,download_url:downloadUrl,image_url:imageUrl,is_published:$("d-published").checked,updated_at:new Date().toISOString()};
   const result=selectedDownload
     ?await sb.from("software_downloads").update(row).eq("id",selectedDownload.id)
     :await sb.from("software_downloads").insert(row);
   if(result.error){$("d-msg").textContent="Lỗi lưu: "+result.error.message;return;}
-  toast("Đã lưu phần mềm.");clearDownloadForm();await loadDownloads();
+  toast("Đã lưu thông tin phần mềm.");clearDownloadForm();await loadDownloads();
 };
 $("d-del").onclick=async()=>{
   if(!selectedDownload)return toast("Chọn phần mềm cần xóa.");
-  if(!await currentAdmin())return toast("Không có quyền admin.");
-  if(!confirm(`Xóa phần mềm "${selectedDownload.title}"?`))return;
+  if(!(await currentAdmin()))return toast("Tài khoản chưa được cấp quyền admin.");
+  if(!confirm(`Xóa phần mềm “${selectedDownload.title}”?`))return;
   const {error}=await sb.from("software_downloads").delete().eq("id",selectedDownload.id);
   if(error)return toast("Không xóa được: "+error.message);
   clearDownloadForm();await loadDownloads();toast("Đã xóa phần mềm.");
 };
 
-/* ===== Top 10 ===== */
+/* ===== Xếp hạng Top 10 ===== */
 function renderRankEditor(){
-  const options='<option value="">— Không chọn sản phẩm —</option>'+
-    products.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("");
+  const options='<option value="">— Không chọn sản phẩm —</option>'+products.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("");
   $("rank-editor").innerHTML=Array.from({length:10},(_,i)=>{
     const rank=i+1;
     return `<div class="guide-item"><label style="margin-top:0;color:var(--txt);font-weight:800">Top ${rank}</label><select class="rank-product" data-rank="${rank}">${options}</select></div>`;
   }).join("");
   document.querySelectorAll(".rank-product").forEach(el=>{
-    const rank=Number(el.dataset.rank);
-    const p=products.find(x=>Number(x.best_rank)===rank);
-    el.value=p?String(p.id):"";
+    const rank=Number(el.dataset.rank),selected=products.find(p=>Number(p.best_rank)===rank);
+    el.value=selected?String(selected.id):"";
   });
 }
 async function loadRankEditor(){
@@ -428,12 +535,11 @@ async function loadRankEditor(){
 }
 $("rank-reload").onclick=loadRankEditor;
 $("rank-save").onclick=async()=>{
-  if(!await currentAdmin())return toast("Tài khoản chưa được cấp quyền admin.");
+  if(!(await currentAdmin()))return toast("Tài khoản chưa được cấp quyền admin.");
   const selects=[...document.querySelectorAll(".rank-product")];
   const chosen=selects.map(el=>({rank:Number(el.dataset.rank),id:el.value})).filter(x=>x.id);
-  if(new Set(chosen.map(x=>x.id)).size!==chosen.length)
-    return toast("Một sản phẩm không thể xuất hiện ở nhiều thứ hạng.");
-
+  const ids=chosen.map(x=>x.id);
+  if(new Set(ids).size!==ids.length)return toast("Một sản phẩm không thể xuất hiện ở nhiều thứ hạng.");
   $("rank-save").disabled=true;$("rank-msg").textContent="Đang lưu...";
   try{
     for(const p of products){
@@ -442,19 +548,16 @@ $("rank-save").onclick=async()=>{
       if(error)throw error;
     }
     await getProducts();renderProducts();renderSelects();renderRankEditor();
-    $("rank-msg").textContent="Đã lưu xếp hạng Top 10.";
-    toast("Đã lưu xếp hạng Top 10.");
-  }catch(e){
-    $("rank-msg").textContent="Lỗi lưu xếp hạng: "+(e.message||e);
+    $("rank-msg").textContent="Đã lưu xếp hạng Top 10.";toast("Đã lưu xếp hạng Top 10.");
+  }catch(error){
+    $("rank-msg").textContent="Lỗi lưu xếp hạng: "+(error?.message||"Không rõ lỗi");
   }finally{$("rank-save").disabled=false;}
 };
 
 /* ===== Chuyển tab ===== */
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
   document.querySelectorAll(".tabs button").forEach(x=>x.classList.toggle("on",x===b));
-  ["prod","ranking","keys","orders","guides","downloads"].forEach(t=>{
-    $("t-"+t).hidden=t!==b.dataset.t;
-  });
+  ["prod","ranking","keys","orders","guides","downloads"].forEach(t=>$("t-"+t).hidden=t!==b.dataset.t);
   if(b.dataset.t==="ranking")loadRankEditor();
   if(b.dataset.t==="guides")loadGuideVideos();
   if(b.dataset.t==="downloads")loadDownloads();
