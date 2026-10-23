@@ -66,6 +66,7 @@ th{color:var(--mute);font-weight:600;font-size:12px;text-transform:uppercase;let
   <div class="logo rainbow">KEY SUPER VN · ADMIN</div>
   <div class="tabs">
     <button data-t="prod" class="on">Sản phẩm</button>
+    <button data-t="rentals">Thuê acc FF</button>
     <button data-t="keys">Kho key</button>
     <button data-t="orders">Đơn chờ</button>
     <button data-t="guides">Hướng dẫn</button>
@@ -77,15 +78,23 @@ th{color:var(--mute);font-weight:600;font-size:12px;text-transform:uppercase;let
   <div id="t-prod">
     <div class="panel">
       <h2>Danh sách sản phẩm</h2>
-      <table><thead><tr><th>Tên</th><th>Danh mục</th><th>Tồn kho</th></tr></thead><tbody id="ptable"></tbody></table>
+      <table><thead><tr><th>Top bán chạy</th><th>Tên</th><th>Danh mục</th><th>Tồn kho</th></tr></thead><tbody id="ptable"></tbody></table>
     </div>
     <div class="panel">
       <h2>Thêm / sửa sản phẩm</h2>
       <p class="hint">Chọn "Sản phẩm mới" để thêm, hoặc chọn một sản phẩm có sẵn để sửa.</p>
       <label>Sản phẩm</label>
       <select id="p-sel"></select>
+      <label>Xếp hạng bán chạy (mỗi hạng chỉ dành cho 1 sản phẩm)</label>
+      <select id="p-rank">
+        <option value="">Không xếp hạng</option>
+        <option value="1">Top 1</option><option value="2">Top 2</option><option value="3">Top 3</option>
+        <option value="4">Top 4</option><option value="5">Top 5</option><option value="6">Top 6</option>
+        <option value="7">Top 7</option><option value="8">Top 8</option><option value="9">Top 9</option><option value="10">Top 10</option>
+      </select>
       <label>Tên sản phẩm</label><input id="p-name">
-      <label>Danh mục</label><input id="p-cat" placeholder="PROXY IOS / MENU IOS / MENU ANDROID / Thuê acc FF"><p class="hint">Để sản phẩm xuất hiện trong mục Thuê acc FF trên trang chủ, nhập chính xác danh mục <b>Thuê acc FF</b>. Chỉnh giá ở phần Gói giá, mô tả ở phần Mô tả và ảnh ở phần Ảnh banner.</p>
+      <label>Danh mục</label><input id="p-cat" placeholder="PROXY IOS / MENU IOS / MENU ANDROID / Thuê acc FF">
+      <p class="hint">Muốn hiện ở mục “Thuê acc FF” ngoài trang chủ: nhập chính xác danh mục <b>Thuê acc FF</b>. Giá nhập ở phần Gói giá, mô tả ở phần Mô tả và ảnh tải ở phần Ảnh banner.</p>
       <label>Mô tả</label><input id="p-desc">
       <label>Kiểu nền khi chưa có ảnh</label>
       <select id="p-style"><option value="novax">Xanh NovaX</option><option value="innova">Xanh lá Innova</option><option value="generic">Tím</option></select>
@@ -97,6 +106,12 @@ th{color:var(--mute);font-weight:600;font-size:12px;text-transform:uppercase;let
       <textarea id="p-pk" placeholder="1 Ngày|15000&#10;1 Tuần|70000&#10;1 Tháng|150000"></textarea>
       <div class="row"><button class="btn" id="p-save">Lưu sản phẩm</button><button class="btn ghost" id="p-del">Xóa sản phẩm</button></div>
     </div>
+  </div>
+
+  <!-- THUÊ ACC FF: danh mục và dữ liệu riêng, không dùng bảng products -->
+  <div id="t-rentals" hidden>
+    <div class="panel"><h2>Danh sách acc Free Fire cho thuê</h2><p class="hint">Danh mục riêng, không ảnh hưởng danh sách sản phẩm key.</p><table><thead><tr><th>Tên acc</th><th>Giá thuê</th><th>Trạng thái</th><th></th></tr></thead><tbody id="r-table"></tbody></table><button class="btn ghost sm" id="r-reload">Tải lại</button></div>
+    <div class="panel"><h2>Thêm / sửa acc cho thuê</h2><input id="r-id" type="hidden"><label>Tên hiển thị</label><input id="r-title" placeholder="Acc FF rank cao..."><label>Mô tả hồ sơ</label><textarea id="r-desc" placeholder="Rank, skin, vật phẩm..."></textarea><label>Giá thuê (VNĐ)</label><input id="r-price" type="number" min="0" placeholder="50000"><label>Link ảnh (URL công khai)</label><input id="r-image" placeholder="https://..."><label><input id="r-available" type="checkbox" checked style="width:auto"> Còn cho thuê</label><label><input id="r-published" type="checkbox" checked style="width:auto"> Hiển thị công khai</label><div class="row"><button class="btn" id="r-save">Lưu acc</button><button class="btn ghost" id="r-clear">Làm mới form</button><button class="btn ghost" id="r-delete">Xóa acc</button></div><p id="r-msg" class="msg"></p></div>
   </div>
 
   <!-- KHO KEY -->
@@ -119,12 +134,6 @@ th{color:var(--mute);font-weight:600;font-size:12px;text-transform:uppercase;let
     <div class="panel">
       <h2>Đơn chờ thanh toán</h2>
       <p class="hint">Kiểm tra tài khoản đã nhận đúng số tiền và đúng mã đơn trong nội dung chuyển khoản, rồi bấm "Xác nhận" để gán key cho khách.</p>
-      <div class="row" style="margin:14px 0">
-        <input id="o-search" type="search" placeholder="Nhập mã đơn cần tìm..." aria-label="Tìm theo mã đơn" style="flex:1;min-width:220px">
-        <button class="btn" id="o-search-btn" type="button">Tìm kiếm</button>
-        <button class="btn ghost sm" id="o-search-clear" type="button">Xóa tìm</button>
-      </div>
-      <p class="msg" id="o-search-msg" aria-live="polite"></p>
       <table><thead><tr><th>Mã đơn</th><th>Sản phẩm</th><th>Gói</th><th>Số tiền</th><th></th></tr></thead><tbody id="otable"></tbody></table>
       <div class="row"><button class="btn ghost sm" id="o-reload">Tải lại</button></div>
     </div>
@@ -233,14 +242,25 @@ function showApp(){ $("login").hidden=true; $("app").hidden=false; loadAll(); }
 /* ===== Tải dữ liệu ===== */
 async function loadAll(){ await getProducts(); renderProducts(); renderSelects(); loadOrders(); loadGuideVideos(); }
 async function getProducts(){
-  const {data,error} = await sb.rpc("get_products");
+  const {data,error}=await sb.rpc("get_products");
   products = error ? [] : (data||[]).map(p=>({...p,desc:p.descr}));
+  const {data:ranks,error:rankError}=await sb.rpc("get_best_seller_ranks");
+  if(!rankError && Array.isArray(ranks)){
+    const rankMap=new Map(ranks.map(r=>[String(r.product_id),Number(r.best_seller_rank)]));
+    products=products.map(p=>({...p,best_seller_rank:rankMap.get(String(p.id))||null}));
+  }
 }
 function renderProducts(){
-  $("ptable").innerHTML = products.map(p=>{
+  const sorted=[...products].sort((a,b)=>{
+    const ar=Number(a.best_seller_rank)||99, br=Number(b.best_seller_rank)||99;
+    return ar-br || String(a.name||"").localeCompare(String(b.name||""),"vi");
+  });
+  $("ptable").innerHTML=sorted.map(p=>{
     const st=Number(p.stock||0);
-    return `<tr><td>${esc(p.name)}</td><td>${esc(p.cat)}</td><td><span class="stock ${st>0?"in":"out"}">${st}</span> <span class="hint">${Object.entries(p.pkg_stock||{}).map(([k,v])=>k+": "+v).join(" · ")}</span></td></tr>`;
-  }).join("") || `<tr><td colspan="3" class="msg">Chưa có sản phẩm.</td></tr>`;
+    const rank=Number(p.best_seller_rank);
+    const top=rank>=1&&rank<=10?`<strong>🔥 Top ${rank}</strong>`:"—";
+    return `<tr><td>${top}</td><td>${esc(p.name)}</td><td>${esc(p.cat)}</td><td><span class="stock ${st>0?"in":"out"}">${st}</span> <span class="hint">${Object.entries(p.pkg_stock||{}).map(([k,v])=>k+": "+v).join(" · ")}</span></td></tr>`;
+  }).join("") || `<tr><td colspan="4" class="msg">Chưa có sản phẩm.</td></tr>`;
 }
 function renderSelects(){
   const opts = products.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("");
@@ -254,6 +274,7 @@ $("p-sel").onchange = () => {
   const p = products.find(x=>x.id===$("p-sel").value) || {name:"",cat:"",desc:"",style:"generic",img:"",pk:[]};
   $("p-name").value=p.name; $("p-cat").value=p.cat; $("p-desc").value=p.desc||""; $("p-style").value=p.style||"generic";
   $("p-img").value=p.img||""; $("p-pk").value=(p.pk||[]).map(x=>x.l+"|"+x.p).join("\n");
+  $("p-rank").value=p.best_seller_rank?String(p.best_seller_rank):"";
 };
 
 /* ===== Tải ảnh lên Supabase Storage ===== */
@@ -269,16 +290,23 @@ $("p-file").onchange = async e => {
 
 /* ===== Sản phẩm ===== */
 $("p-save").onclick = async () => {
-  const name = $("p-name").value.trim();
+  const name=$("p-name").value.trim();
   if(!name) return toast("Nhập tên sản phẩm");
-  const pk = $("p-pk").value.split("\n").map(l=>l.split("|")).filter(a=>a.length===2&&a[1].trim()).map(a=>({l:a[0].trim(),p:Number(a[1].trim())}));
-  const id = $("p-sel").value || (name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"sp")+"-"+Math.random().toString(36).slice(2,6);
-  const {error} = await sb.from("products").upsert({
-    id, name, cat:$("p-cat").value.trim(), descr:$("p-desc").value.trim(),
-    style:$("p-style").value, img:driveDirect($("p-img").value.trim()), pk
+  const pk=$("p-pk").value.split("\n").map(l=>l.split("|")).filter(a=>a.length===2&&a[1].trim()).map(a=>({l:a[0].trim(),p:Number(a[1].trim())}));
+  const id=$("p-sel").value || (name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"sp")+"-"+Math.random().toString(36).slice(2,6);
+  const rankValue=$("p-rank").value;
+  const rank=rankValue?Number(rankValue):null;
+  if(rank!==null&&(!Number.isInteger(rank)||rank<1||rank>10)) return toast("Thứ hạng phải từ Top 1 đến Top 10");
+  if(rank!==null){
+    const {error:rankError}=await sb.from("products").update({best_seller_rank:null}).eq("best_seller_rank",rank).neq("id",id);
+    if(rankError) return toast("Không cập nhật được thứ hạng: "+rankError.message);
+  }
+  const {error}=await sb.from("products").upsert({
+    id,name,cat:$("p-cat").value.trim(),descr:$("p-desc").value.trim(),
+    style:$("p-style").value,img:driveDirect($("p-img").value.trim()),pk,best_seller_rank:rank
   });
   if(error) return toast("Lỗi: "+error.message);
-  toast("Đã lưu sản phẩm"); await loadAll();
+  toast("Đã lưu sản phẩm và thứ hạng bán chạy"); await loadAll();
 };
 
 /* ===== Xóa sản phẩm ===== */
@@ -304,29 +332,15 @@ $("k-save").onclick = async () => {
 };
 
 /* ===== Đơn chờ ===== */
-let pendingOrders = [];
 $("o-reload").onclick = loadOrders;
-$("o-search-btn").onclick = renderOrders;
-$("o-search-clear").onclick = () => { $("o-search").value=""; renderOrders(); $("o-search").focus(); };
-$("o-search").addEventListener("keydown", e => { if(e.key==="Enter") renderOrders(); });
-function renderOrders(){
-  const q = $("o-search").value.trim().toLocaleLowerCase("vi");
-  const filtered = pendingOrders.filter(o => String(o.code ?? "").toLocaleLowerCase("vi").includes(q));
-  $("otable").innerHTML = filtered.map(o=>`<tr>
+async function loadOrders(){
+  const {data,error} = await sb.from("orders").select("*").eq("status","pending").order("created",{ascending:false});
+  if(error){ $("otable").innerHTML=`<tr><td colspan="5" class="msg">Không tải được đơn.</td></tr>`; return; }
+  $("otable").innerHTML = (data||[]).map(o=>`<tr>
       <td class="code">${esc(o.code)}</td><td>${esc(o.pname||o.product)}</td><td>${esc(o.pkg)}</td><td>${fmt(o.amount)}</td>
       <td><button class="btn sm" data-c="${esc(o.code)}">Xác nhận</button></td></tr>`).join("")
-    || `<tr><td colspan="5" class="msg">${q ? "Không tìm thấy mã đơn phù hợp trong danh sách đơn chờ." : "Không có đơn chờ."}</td></tr>`;
-  $("o-search-msg").textContent = q
-    ? `Tìm thấy ${filtered.length} / ${pendingOrders.length} đơn chờ khớp mã "${$("o-search").value.trim()}".`
-    : `Đang hiển thị ${pendingOrders.length} đơn chờ.`;
-  document.querySelectorAll("#otable [data-c]").forEach(b=>b.onclick=()=>confirmOrder(b.dataset.c));
-}
-async function loadOrders(){
-  $("otable").innerHTML = `<tr><td colspan="5" class="msg">Đang tải đơn chờ...</td></tr>`;
-  const {data,error} = await sb.from("orders").select("*").eq("status","pending").order("created",{ascending:false});
-  if(error){ $("otable").innerHTML=`<tr><td colspan="5" class="msg">Không tải được đơn.</td></tr>`; $("o-search-msg").textContent=""; return; }
-  pendingOrders = data || [];
-  renderOrders();
+    || `<tr><td colspan="5" class="msg">Không có đơn chờ.</td></tr>`;
+  document.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>confirmOrder(b.dataset.c));
 }
 async function confirmOrder(code){
   const {data:o} = await sb.from("orders").select("amount").eq("code",code).single();
@@ -477,10 +491,25 @@ $("d-del").onclick=async()=>{
   clearDownloadForm(); await loadDownloads(); toast("Đã xóa phần mềm.");
 };
 
+
+/* ===== Thuê acc FF: bảng riêng rental_accounts ===== */
+async function loadRentalsAdmin(){
+ const {data,error}=await sb.from('rental_accounts').select('*').order('created_at',{ascending:false});
+ if(error){$('r-table').innerHTML='<tr><td colspan="4">Chưa có bảng rental_accounts. Hãy chạy file SQL đi kèm.</td></tr>';return;}
+ $('r-table').innerHTML=(data||[]).map(r=>`<tr><td>${esc(r.title)}</td><td>${fmt(r.price)}</td><td>${r.is_published?'Đang hiển thị':'Đang ẩn'} · ${r.is_available?'Còn':'Hết'}</td><td><button class="btn sm" data-r-edit="${esc(r.id)}">Sửa</button></td></tr>`).join('')||'<tr><td colspan="4">Chưa có acc nào.</td></tr>';
+ document.querySelectorAll('[data-r-edit]').forEach(b=>b.onclick=()=>selectRental(b.dataset.rEdit));
+}
+async function selectRental(id){const {data,error}=await sb.from('rental_accounts').select('*').eq('id',id).single();if(error||!data)return toast('Không tải được acc.');$('r-id').value=data.id;$('r-title').value=data.title||'';$('r-desc').value=data.description||'';$('r-price').value=data.price||0;$('r-image').value=data.image_url||'';$('r-available').checked=!!data.is_available;$('r-published').checked=!!data.is_published;}
+function clearRental(){['r-id','r-title','r-desc','r-price','r-image','r-msg'].forEach(id=>$(id).value='');$('r-available').checked=true;$('r-published').checked=true;}
+$('r-save').onclick=async()=>{if(!(await currentAdmin()))return toast('Tài khoản chưa được cấp quyền admin.');const title=$('r-title').value.trim(),price=Number($('r-price').value);if(!title||!Number.isFinite(price)||price<0)return toast('Nhập tên acc và giá thuê hợp lệ.');const row={title,description:$('r-desc').value.trim(),price,image_url:$('r-image').value.trim()||null,is_available:$('r-available').checked,is_published:$('r-published').checked,updated_at:new Date().toISOString()};const id=$('r-id').value;const res=id?await sb.from('rental_accounts').update(row).eq('id',id):await sb.from('rental_accounts').insert(row);if(res.error)return toast('Lỗi lưu: '+res.error.message);toast('Đã lưu acc thuê riêng.');clearRental();await loadRentalsAdmin();};
+$('r-delete').onclick=async()=>{if(!(await currentAdmin()))return toast('Tài khoản chưa được cấp quyền admin.');const id=$('r-id').value;if(!id)return toast('Chọn acc cần xóa trước.');if(!confirm('Xóa acc này khỏi danh mục cho thuê?'))return;const {error}=await sb.from('rental_accounts').delete().eq('id',id);if(error)return toast('Lỗi xóa: '+error.message);clearRental();await loadRentalsAdmin();toast('Đã xóa acc.');};
+$('r-clear').onclick=clearRental;$('r-reload').onclick=loadRentalsAdmin;
+
 /* ===== Chuyển tab ===== */
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
   document.querySelectorAll(".tabs button").forEach(x=>x.classList.toggle("on",x===b));
-  ["prod","keys","orders","guides","downloads"].forEach(t=>$("t-"+t).hidden = t!==b.dataset.t);
+  ["prod","rentals","keys","orders","guides","downloads"].forEach(t=>$("t-"+t).hidden = t!==b.dataset.t);
+  if(b.dataset.t==="rentals") loadRentalsAdmin();
   if(b.dataset.t==="guides") loadGuideVideos();
   if(b.dataset.t==="downloads") loadDownloads();
 });
